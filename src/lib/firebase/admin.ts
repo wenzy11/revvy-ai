@@ -54,8 +54,13 @@ export async function getCredits(uid: string): Promise<number> {
   return typeof c === "number" ? c : 0;
 }
 
-/** İlk girişte users/{uid} yoksa credits:1 ile oluşturur; varsa krediye dokunmaz. */
-export async function ensureUserProfile(uid: string, email: string | null) {
+type EnsureProfileOpts = {
+  email: string | null;
+  displayName?: string | null;
+};
+
+/** İlk girişte users/{uid} yoksa credits:1 ile oluşturur; varsa email/displayName/lastLoginAt güncellenir. */
+export async function ensureUserProfile(uid: string, opts: EnsureProfileOpts) {
   const db = getAdminDb();
   if (!db) return;
   const ref = db.collection("users").doc(uid);
@@ -63,12 +68,25 @@ export async function ensureUserProfile(uid: string, email: string | null) {
     const snap = await tx.get(ref);
     if (!snap.exists) {
       tx.set(ref, {
-        email: email ?? null,
+        email: opts.email ?? null,
+        displayName: opts.displayName ?? null,
         credits: 1,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
+        lastLoginAt: FieldValue.serverTimestamp(),
       });
+      return;
     }
+    const data = snap.data() as { email?: string | null; displayName?: string | null } | undefined;
+    const patch: Record<string, unknown> = {
+      email: opts.email ?? data?.email ?? null,
+      lastLoginAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (opts.displayName != null && opts.displayName !== "") {
+      patch.displayName = opts.displayName;
+    }
+    tx.update(ref, patch);
   });
 }
 

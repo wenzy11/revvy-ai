@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     let firebaseUid: string | null = null;
-    if (body.stage === "final" && isFirebaseAdminConfigured()) {
+    if (isFirebaseAdminConfigured()) {
       const token = bearerToken(req);
       if (!token) {
         return Response.json({ error: "Giris gerekli" }, { status: 401 });
@@ -65,9 +65,11 @@ export async function POST(req: Request) {
         return Response.json({ error: "Gecersiz oturum" }, { status: 401 });
       }
       firebaseUid = decoded.uid;
-      const creditsNow = await getCredits(firebaseUid);
-      if (creditsNow < 1) {
-        return Response.json({ error: "Yetersiz kredi" }, { status: 403 });
+      if (body.stage === "final") {
+        const creditsNow = await getCredits(firebaseUid);
+        if (creditsNow < 1) {
+          return Response.json({ error: "Yetersiz kredi" }, { status: 403 });
+        }
       }
     }
 

@@ -19,6 +19,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "Gecersiz token" }, { status: 401 });
   }
 
-  await ensureUserProfile(decoded.uid, decoded.email ?? null);
+  await ensureUserProfile(decoded.uid, {
+    email: decoded.email ?? null,
+    displayName: typeof decoded.name === "string" ? decoded.name : null,
+  });
   return Response.json({ ok: true });
 }

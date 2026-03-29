@@ -4,7 +4,7 @@ export type RenderRequest = {
   imageUrl: string;
   settings: EditSettings;
   stage: RenderStage;
-  /** Firebase Auth ID token (final + sunucuda Admin SDK varsa zorunlu) */
+  /** Firebase Auth ID token (preview/final; sunucuda Admin SDK varsa zorunlu) */
   idToken?: string;
 };
 

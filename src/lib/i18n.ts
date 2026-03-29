@@ -11,6 +11,15 @@ const tr: Dict = {
   demo_login: "Demo Giriş",
   google_sign_in: "Google ile giriş",
   config_loading: "Yükleniyor…",
+  auth_wall_title: "Devam etmek için giriş yap",
+  auth_wall_subtitle:
+    "Revvy AI araç fotoğraflarını stüdyo kalitesine taşır. Kredilerin ve üretimlerin hesabında güvenle saklanır.",
+  auth_wall_hint: "İlk girişte hesabına 1 ücretsiz kredi tanımlanır.",
+  auth_wall_redirect_note: "Google’a yönlendirileceksin; tamamla ve bu sayfaya geri dön.",
+  auth_checking: "Oturum kontrol ediliyor…",
+  firebase_missing_title: "Firebase yapılandırması eksik",
+  firebase_missing_body:
+    "Sunucuda FIREBASE_WEB_CONFIG_JSON ve FIREBASE_SERVICE_ACCOUNT_JSON tanımlı olmalı. Vercel Environment Variables’ı kontrol et.",
   logout: "Çıkış",
   language: "Dil",
 
@@ -67,6 +76,15 @@ const en: Dict = {
   demo_login: "Demo Login",
   google_sign_in: "Sign in with Google",
   config_loading: "Loading…",
+  auth_wall_title: "Sign in to continue",
+  auth_wall_subtitle:
+    "Revvy AI upgrades car photos to studio quality. Your credits and work stay tied to your account.",
+  auth_wall_hint: "You get 1 free credit on first sign-in.",
+  auth_wall_redirect_note: "You’ll be sent to Google, then return here.",
+  auth_checking: "Checking session…",
+  firebase_missing_title: "Firebase is not configured",
+  firebase_missing_body:
+    "Set FIREBASE_WEB_CONFIG_JSON and FIREBASE_SERVICE_ACCOUNT_JSON on the server (e.g. Vercel env).",
   logout: "Logout",
   language: "Language",
 

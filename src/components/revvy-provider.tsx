@@ -1,6 +1,13 @@
 "use client";
 
-import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  getRedirectResult,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut as firebaseSignOut,
+} from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import {
   createContext,
@@ -49,6 +56,7 @@ type RevvyContextValue = {
   draft: Draft;
   processing: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInPending: boolean;
   signOut: () => Promise<void>;
   topUpCredits: (amount: number) => void;
   setUpload: (file: File) => Promise<void>;
@@ -75,8 +83,9 @@ function fileToDataUrl(file: File): Promise<string> {
 export function RevvyProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("tr");
   const [user, setUser] = useState<AppUser | null>(null);
-  const [credits, setCredits] = useState<number>(1);
+  const [credits, setCredits] = useState<number>(0);
   const [processing, setProcessing] = useState(false);
+  const [signInPending, setSignInPending] = useState(false);
   const [authLoading, setAuthLoading] = useState(() => hasFirebaseClientConfig());
   const [creditsLoading, setCreditsLoading] = useState(false);
   const [draft, setDraft] = useState<Draft>({
@@ -132,8 +141,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
         credits?: number;
       };
       if (parsed.lang === "tr" || parsed.lang === "en") setLang(parsed.lang);
-      if (!firebaseEnabled && parsed.user !== undefined) setUser(parsed.user);
       if (!firebaseEnabled) {
+        if (parsed.user !== undefined) setUser(parsed.user);
         const c = parsed.credits;
         setCredits(typeof c === "number" && Number.isFinite(c) && c >= 0 ? c : 1);
       }
@@ -181,6 +190,10 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       setAuthLoading(false);
       return;
     }
+
+    void getRedirectResult(auth).catch((err) => {
+      console.error("getRedirectResult", err);
+    });
 
     let unsubDoc: (() => void) | undefined;
 
@@ -239,12 +252,33 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     const auth = getFirebaseAuth();
-    if (!auth) {
-      setUser({ email: "demo@revvy.ai" });
-      return;
+    if (!auth) return;
+
+    setSignInPending(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope("profile");
+      provider.addScope("email");
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      const host = typeof window !== "undefined" ? window.location.hostname : "";
+      const localDev = host === "localhost" || host === "127.0.0.1";
+
+      if (localDev) {
+        try {
+          await signInWithPopup(auth, provider);
+          setSignInPending(false);
+          return;
+        } catch (e) {
+          console.warn("signInWithPopup failed, trying redirect", e);
+        }
+      }
+
+      await signInWithRedirect(auth, provider);
+    } catch (e) {
+      console.error("signInWithGoogle", e);
+      setSignInPending(false);
     }
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -288,18 +322,24 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
 
   const generatePreview = useCallback(async () => {
     if (!draft.sourceUrl) return;
+    const auth = getFirebaseAuth();
+    const idToken =
+      firebaseEnabled && auth?.currentUser
+        ? await auth.currentUser.getIdToken()
+        : undefined;
     setProcessing(true);
     try {
       const preview = await runAiPipeline({
         imageUrl: draft.sourceUrl,
         settings: draft.settings,
         stage: "preview",
+        idToken,
       });
       setDraft((prev) => ({ ...prev, preview }));
     } finally {
       setProcessing(false);
     }
-  }, [draft.settings, draft.sourceUrl]);
+  }, [draft.settings, draft.sourceUrl, firebaseEnabled]);
 
   const generateFinal = useCallback(async () => {
     if (!draft.sourceUrl || credits < 1) return;
@@ -354,6 +394,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       draft,
       processing,
       signInWithGoogle,
+      signInPending,
       signOut,
       topUpCredits,
       setUpload,
@@ -374,6 +415,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       draft,
       processing,
       signInWithGoogle,
+      signInPending,
       signOut,
       topUpCredits,
       setUpload,
