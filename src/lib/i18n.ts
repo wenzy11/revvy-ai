@@ -10,6 +10,7 @@ const tr: Dict = {
   credits: "kredi",
   demo_login: "Demo Giriş",
   google_sign_in: "Google ile giriş",
+  config_loading: "Yükleniyor…",
   logout: "Çıkış",
   language: "Dil",
 
@@ -65,6 +66,7 @@ const en: Dict = {
   credits: "credits",
   demo_login: "Demo Login",
   google_sign_in: "Sign in with Google",
+  config_loading: "Loading…",
   logout: "Logout",
   language: "Language",
 

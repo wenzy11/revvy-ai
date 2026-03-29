@@ -12,8 +12,13 @@ import {
   type ReactNode,
 } from "react";
 import { runAiPipeline } from "../lib/ai/pipeline";
-import { getFirebaseWebConfig } from "../lib/firebase/config";
-import { getFirebaseAuth, getFirebaseDb } from "../lib/firebase/client";
+import { getFirebaseWebConfig, type FirebaseWebConfig } from "../lib/firebase/config";
+import {
+  getFirebaseAuth,
+  getFirebaseDb,
+  hasFirebaseClientConfig,
+  setFirebaseClientOverride,
+} from "../lib/firebase/client";
 import type { Lang } from "../lib/i18n";
 import type { AppUser, EditSettings, RenderedAsset } from "../lib/types";
 
@@ -39,6 +44,8 @@ type RevvyContextValue = {
   authLoading: boolean;
   creditsLoading: boolean;
   firebaseEnabled: boolean;
+  /** Build’de env yokken /api/public-config bekleniyor */
+  firebaseConfigResolving: boolean;
   draft: Draft;
   processing: boolean;
   signInWithGoogle: () => Promise<void>;
@@ -70,13 +77,41 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [credits, setCredits] = useState<number>(1);
   const [processing, setProcessing] = useState(false);
-  const [authLoading, setAuthLoading] = useState(() => Boolean(getFirebaseWebConfig()));
+  const [authLoading, setAuthLoading] = useState(() => hasFirebaseClientConfig());
   const [creditsLoading, setCreditsLoading] = useState(false);
   const [draft, setDraft] = useState<Draft>({
     settings: DEFAULT_SETTINGS,
   });
+  const [, setConfigTick] = useState(0);
+  const [publicConfigTried, setPublicConfigTried] = useState(() =>
+    Boolean(getFirebaseWebConfig()),
+  );
 
-  const firebaseEnabled = Boolean(getFirebaseWebConfig());
+  const firebaseEnabled = hasFirebaseClientConfig();
+  const firebaseConfigResolving = !publicConfigTried;
+
+  useEffect(() => {
+    if (getFirebaseWebConfig()) return;
+    let cancelled = false;
+    fetch("/api/public-config")
+      .then((r) => r.json() as Promise<{ firebase: FirebaseWebConfig | null }>)
+      .then((data) => {
+        if (cancelled) return;
+        setFirebaseClientOverride(data.firebase ?? null);
+        setConfigTick((n) => n + 1);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFirebaseClientOverride(null);
+        setConfigTick((n) => n + 1);
+      })
+      .finally(() => {
+        if (!cancelled) setPublicConfigTried(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -315,6 +350,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       authLoading,
       creditsLoading,
       firebaseEnabled,
+      firebaseConfigResolving,
       draft,
       processing,
       signInWithGoogle,
@@ -334,6 +370,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       authLoading,
       creditsLoading,
       firebaseEnabled,
+      firebaseConfigResolving,
       draft,
       processing,
       signInWithGoogle,

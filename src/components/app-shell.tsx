@@ -16,8 +16,17 @@ const links = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { lang, setLang, credits, user, signInWithGoogle, signOut, firebaseEnabled, authLoading } =
-    useRevvy();
+  const {
+    lang,
+    setLang,
+    credits,
+    user,
+    signInWithGoogle,
+    signOut,
+    firebaseEnabled,
+    authLoading,
+    firebaseConfigResolving,
+  } = useRevvy();
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
@@ -81,12 +90,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : (
               <Button
                 size="sm"
-                disabled={firebaseEnabled && authLoading}
+                disabled={(firebaseEnabled && authLoading) || firebaseConfigResolving}
                 onClick={() => {
                   void signInWithGoogle();
                 }}
               >
-                {firebaseEnabled ? t(lang, "google_sign_in") : t(lang, "demo_login")}
+                {firebaseConfigResolving
+                  ? t(lang, "config_loading")
+                  : firebaseEnabled
+                    ? t(lang, "google_sign_in")
+                    : t(lang, "demo_login")}
               </Button>
             )}
 
