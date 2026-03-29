@@ -16,17 +16,7 @@ const links = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const {
-    lang,
-    setLang,
-    credits,
-    user,
-    signInWithGoogle,
-    signOut,
-    firebaseEnabled,
-    authLoading,
-    firebaseConfigResolving,
-  } = useRevvy();
+  const { lang, setLang, credits, signOut } = useRevvy();
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
@@ -76,32 +66,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Coins className="h-3.5 w-3.5 text-[color:var(--brand)]" />
               {credits} {t(lang, "credits")}
             </div>
-            {user ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void signOut();
-                }}
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                {t(lang, "logout")}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                disabled={(firebaseEnabled && authLoading) || firebaseConfigResolving}
-                onClick={() => {
-                  void signInWithGoogle();
-                }}
-              >
-                {firebaseConfigResolving
-                  ? t(lang, "config_loading")
-                  : firebaseEnabled
-                    ? t(lang, "google_sign_in")
-                    : t(lang, "demo_login")}
-              </Button>
-            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void signOut();
+              }}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {t(lang, "logout")}
+            </Button>
 
             <Button className="md:hidden" variant="ghost" size="sm" type="button" aria-label="Menu">
               <Menu className="h-4 w-4" />

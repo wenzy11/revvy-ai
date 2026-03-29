@@ -17,20 +17,13 @@ export default function UploadPage() {
     setUpload,
     updateSettings,
     generateFinal,
-    firebaseEnabled,
-    user,
     authLoading,
     creditsLoading,
   } = useRevvy();
 
-  const needSignIn = firebaseEnabled && !user;
-  const creditsBlocked = firebaseEnabled && (authLoading || creditsLoading);
+  const creditsBlocked = authLoading || creditsLoading;
   const canGenerate =
-    draft.sourceUrl &&
-    !processing &&
-    credits >= 1 &&
-    !needSignIn &&
-    !creditsBlocked;
+    draft.sourceUrl && !processing && credits >= 1 && !creditsBlocked;
 
   return (
     <AppShell>
@@ -114,9 +107,7 @@ export default function UploadPage() {
             </div>
 
             <div className="rounded-2xl border border-[color:var(--border)] bg-white px-4 py-3 text-xs text-[color:var(--muted)]">
-              {needSignIn ? (
-                t(lang, "sign_in_required")
-              ) : draft.sourceUrl ? (
+              {draft.sourceUrl ? (
                 <>
                   {t(lang, "generate_help_has_image")}{" "}
                   <span className="font-semibold text-blue-900">

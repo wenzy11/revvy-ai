@@ -16,6 +16,21 @@ let db: Firestore | undefined;
  */
 let clientOverride: FirebaseWebConfig | null | undefined = undefined;
 
+/** Aynı config tekrar uygulanınca deleteApp yapma — oturum / redirect sonucu silinmesin (Strict Mode, çift fetch). */
+let appliedOverrideKey = "";
+
+function overrideFingerprint(next: FirebaseWebConfig | null | undefined): string {
+  if (next === undefined) return "__undef__";
+  if (next === null) return "__null__";
+  const keys = Object.keys(next).sort() as (keyof FirebaseWebConfig)[];
+  const sorted: Record<string, string | undefined> = {};
+  for (const k of keys) {
+    const v = next[k];
+    if (v !== undefined && v !== "") sorted[k] = v;
+  }
+  return JSON.stringify(sorted);
+}
+
 function resolveConfig(): FirebaseWebConfig | null {
   if (clientOverride !== undefined) {
     return clientOverride;
@@ -24,6 +39,11 @@ function resolveConfig(): FirebaseWebConfig | null {
 }
 
 export function setFirebaseClientOverride(next: FirebaseWebConfig | null | undefined) {
+  const key = overrideFingerprint(next);
+  if (key === appliedOverrideKey) {
+    return;
+  }
+  appliedOverrideKey = key;
   clientOverride = next;
   for (const existing of getApps()) {
     void deleteApp(existing);

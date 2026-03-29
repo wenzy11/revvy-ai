@@ -3,6 +3,7 @@
 import { Check, Coins } from "lucide-react";
 import { AppShell } from "../../components/app-shell";
 import { useRevvy } from "../../components/revvy-provider";
+import { withLemonCheckoutFirebaseContext } from "../../lib/lemon-checkout-url";
 import { Button } from "../../components/ui/button";
 import { Card, CardBody, CardHeader } from "../../components/ui/card";
 import { t } from "../../lib/i18n";
@@ -28,7 +29,7 @@ const packs = [
   },
 ] as const;
 
-function checkoutUrlFor(credits: 5 | 10 | 20): string | undefined {
+function baseCheckoutUrlFor(credits: 5 | 10 | 20): string | undefined {
   const raw =
     credits === 5
       ? process.env.NEXT_PUBLIC_LEMON_CHECKOUT_5
@@ -40,7 +41,7 @@ function checkoutUrlFor(credits: 5 | 10 | 20): string | undefined {
 }
 
 export default function PricingPage() {
-  const { topUpCredits, lang } = useRevvy();
+  const { topUpCredits, lang, user } = useRevvy();
 
   return (
     <AppShell>
@@ -63,7 +64,14 @@ export default function PricingPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {packs.map((pack) => {
-            const checkout = checkoutUrlFor(pack.credits);
+            const base = baseCheckoutUrlFor(pack.credits);
+            const checkout =
+              base && user?.uid
+                ? withLemonCheckoutFirebaseContext(base, {
+                    uid: user.uid,
+                    email: user.email,
+                  })
+                : base;
             return (
               <Card
                 key={pack.id}

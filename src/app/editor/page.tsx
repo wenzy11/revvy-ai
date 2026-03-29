@@ -16,15 +16,12 @@ export default function EditorPage() {
     updateSettings,
     generatePreview,
     generateFinal,
-    firebaseEnabled,
-    user,
     authLoading,
     creditsLoading,
   } = useRevvy();
 
-  const needSignIn = firebaseEnabled && !user;
-  const creditsBlocked = firebaseEnabled && (authLoading || creditsLoading);
-  const canFinal = !processing && credits >= 1 && !needSignIn && !creditsBlocked;
+  const creditsBlocked = authLoading || creditsLoading;
+  const canFinal = !processing && credits >= 1 && !creditsBlocked;
 
   if (!draft.sourceUrl) {
     return (

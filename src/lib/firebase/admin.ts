@@ -41,7 +41,10 @@ export async function verifyIdToken(idToken: string) {
   if (!auth) return null;
   try {
     return await auth.verifyIdToken(idToken);
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[verifyIdToken]", e instanceof Error ? e.message : e);
+    }
     return null;
   }
 }
@@ -133,5 +136,84 @@ export async function addCredits(uid: string, amount: number): Promise<boolean> 
     return true;
   } catch {
     return false;
+  }
+}
+
+function isAlreadyExistsError(e: unknown): boolean {
+  const err = e as { code?: number; message?: string };
+  return err.code === 6 || Boolean(err.message?.includes("ALREADY_EXISTS"));
+}
+
+export type LemonGrantResult = "granted" | "duplicate" | "no_firebase_user" | "failed";
+
+/**
+ * Ödeme sonrası kredi yazar; aynı Lemon order id ile tekrar çağrılırsa duplicate döner.
+ * Önce checkout[custom][firebase_uid] (e-posta eşleşiyorsa), yoksa buyer e-posta ile Firebase kullanıcısı aranır.
+ */
+export async function grantCreditsForLemonPaidOrder(opts: {
+  lemonOrderId: string;
+  credits: number;
+  buyerEmail: string;
+  firebaseUidFromCheckout?: string | null;
+}): Promise<LemonGrantResult> {
+  const db = getAdminDb();
+  const auth = getAdminAuth();
+  if (!db || !auth) return "failed";
+
+  const emailNorm = opts.buyerEmail.trim().toLowerCase();
+  if (!emailNorm || !opts.lemonOrderId || opts.credits < 1) return "failed";
+
+  const processedRef = db.collection("lemon_webhooks").doc(opts.lemonOrderId);
+
+  let uid: string | undefined;
+  const hint = opts.firebaseUidFromCheckout?.trim();
+  if (hint && /^[a-zA-Z0-9_-]{10,128}$/.test(hint)) {
+    try {
+      const u = await auth.getUser(hint);
+      if (u.email?.toLowerCase() === emailNorm) uid = u.uid;
+    } catch {
+      // e-posta ile devam
+    }
+  }
+  if (!uid) {
+    try {
+      const u = await auth.getUserByEmail(emailNorm);
+      uid = u.uid;
+    } catch {
+      return "no_firebase_user";
+    }
+  }
+
+  try {
+    await processedRef.create({
+      buyerEmail: emailNorm,
+      creditsPending: opts.credits,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    if (isAlreadyExistsError(e)) return "duplicate";
+    return "failed";
+  }
+
+  try {
+    const ok = await addCredits(uid, opts.credits);
+    if (!ok) throw new Error("addCredits failed");
+    await processedRef.set(
+      {
+        uid,
+        grantedCredits: opts.credits,
+        completedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return "granted";
+  } catch (e) {
+    console.error("[grantCreditsForLemonPaidOrder]", e);
+    try {
+      await processedRef.delete();
+    } catch {
+      // ignore
+    }
+    return "failed";
   }
 }

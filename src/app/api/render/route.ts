@@ -54,8 +54,19 @@ export async function POST(req: Request) {
       );
     }
 
+    const adminConfigured = isFirebaseAdminConfigured();
+    const relaxRenderAuth =
+      process.env.NODE_ENV === "development" || process.env.RENDER_AUTH_RELAXED === "1";
+
+    if (!adminConfigured && !relaxRenderAuth) {
+      return Response.json(
+        { error: "Uretim ortaminda FIREBASE_SERVICE_ACCOUNT_JSON zorunlu" },
+        { status: 503 },
+      );
+    }
+
     let firebaseUid: string | null = null;
-    if (isFirebaseAdminConfigured()) {
+    if (adminConfigured) {
       const token = bearerToken(req);
       if (!token) {
         return Response.json({ error: "Giris gerekli" }, { status: 401 });

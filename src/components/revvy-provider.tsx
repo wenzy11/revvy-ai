@@ -197,7 +197,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
 
     let unsubDoc: (() => void) | undefined;
 
-    const unsubAuth = onAuthStateChanged(auth, async (fbUser) => {
+    const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
       unsubDoc?.();
       unsubDoc = undefined;
 
@@ -216,16 +216,23 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
         name: fbUser.displayName ?? undefined,
         photoURL: fbUser.photoURL ?? undefined,
       });
+      setAuthLoading(false);
 
-      try {
-        const token = await fbUser.getIdToken();
-        await fetch("/api/auth/bootstrap", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {
-        // bootstrap 503 olabilir — Firestore yine dinlenir
-      }
+      void (async () => {
+        try {
+          const token = await fbUser.getIdToken();
+          await fetch("/api/auth/bootstrap", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            signal:
+              typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+                ? AbortSignal.timeout(15_000)
+                : undefined,
+          });
+        } catch {
+          // bootstrap 503 / ağ — Firestore snapshot yine çalışır
+        }
+      })();
 
       const ref = doc(db, "users", fbUser.uid);
       unsubDoc = onSnapshot(
@@ -240,8 +247,6 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
           setCreditsLoading(false);
         },
       );
-
-      setAuthLoading(false);
     });
 
     return () => {

@@ -1,18 +1,21 @@
 import crypto from "node:crypto";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAdminDb, grantCreditsForLemonPaidOrder } from "../../../../lib/firebase/admin";
 
 export const runtime = "nodejs";
 
 /**
  * Lemon Squeezy webhook — signing: https://docs.lemonsqueezy.com/help/webhooks/signing-requests
- * Payload examples: https://docs.lemonsqueezy.com/help/webhooks/example-payloads
  */
 
-type LemonMeta = { event_name?: string };
+type LemonMeta = { event_name?: string; custom_data?: Record<string, unknown> };
 
 type OrderAttributes = {
   store_id?: number;
   status?: string;
+  user_email?: string;
   first_order_item?: { variant_id?: number };
+  custom_data?: Record<string, unknown>;
 };
 
 type LemonWebhookBody = {
@@ -53,6 +56,17 @@ function parseVariantCredits(): Map<number, number> {
   return map;
 }
 
+function readFirebaseUidFromPayload(body: LemonWebhookBody, attrs: OrderAttributes): string | undefined {
+  const metaCustom = body.meta?.custom_data;
+  const attrCustom = attrs.custom_data;
+  const from = (obj: Record<string, unknown> | undefined) => {
+    if (!obj) return undefined;
+    const v = obj.firebase_uid ?? obj.firebaseUid;
+    return typeof v === "string" ? v : undefined;
+  };
+  return from(metaCustom as Record<string, unknown> | undefined) ?? from(attrCustom);
+}
+
 export async function POST(req: Request) {
   const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
   if (!secret) {
@@ -79,16 +93,21 @@ export async function POST(req: Request) {
 
   if (eventName === "order_created" && body.data?.type === "orders") {
     const attrs = body.data.attributes;
-    const storeId = attrs?.store_id;
+    const orderId = body.data.id;
+    if (!attrs || orderId == null) {
+      return Response.json({ ok: true, ignored: "missing_attributes" }, { status: 200 });
+    }
+
+    const storeId = attrs.store_id;
     if (expectedStoreId != null && Number.isFinite(expectedStoreId) && storeId !== expectedStoreId) {
       return Response.json({ ok: true, ignored: "store_mismatch" }, { status: 200 });
     }
 
-    if (attrs?.status !== "paid") {
-      return Response.json({ ok: true, ignored: "not_paid", status: attrs?.status }, { status: 200 });
+    if (attrs.status !== "paid") {
+      return Response.json({ ok: true, ignored: "not_paid", status: attrs.status }, { status: 200 });
     }
 
-    const variantId = attrs?.first_order_item?.variant_id;
+    const variantId = attrs.first_order_item?.variant_id;
     if (variantId == null || !Number.isFinite(variantId)) {
       return Response.json({ ok: true, ignored: "no_variant" }, { status: 200 });
     }
@@ -101,7 +120,7 @@ export async function POST(req: Request) {
         JSON.stringify({
           source: "lemon-webhook",
           message: "unknown_variant",
-          orderId: body.data.id,
+          orderId,
           variantId,
           hint: "Set LEMON_SQUEEZY_VARIANT_CREDITS e.g. {\"123456\":5,\"789012\":10}",
         }),
@@ -109,31 +128,66 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, ignored: "unknown_variant", variantId }, { status: 200 });
     }
 
-    // TODO: persist credits (DB) keyed by custom data / customer email — şimdilik log
-    console.info(
-      JSON.stringify({
-        source: "lemon-webhook",
-        event: "order_created",
-        orderId: body.data.id,
+    const buyerEmail = attrs.user_email?.trim();
+    if (!buyerEmail) {
+      return Response.json({ ok: true, ignored: "no_email" }, { status: 200 });
+    }
+
+    const firebaseUidHint = readFirebaseUidFromPayload(body, attrs);
+
+    const result = await grantCreditsForLemonPaidOrder({
+      lemonOrderId: String(orderId),
+      credits,
+      buyerEmail,
+      firebaseUidFromCheckout: firebaseUidHint ?? null,
+    });
+
+    if (result === "no_firebase_user") {
+      console.warn(
+        JSON.stringify({
+          source: "lemon-webhook",
+          message: "no_firebase_user",
+          orderId,
+          buyerEmail,
+          hint: "Kullanıcı Google ile uygulamaya giriş yapmalı (aynı e-posta).",
+        }),
+      );
+      return Response.json(
+        { ok: true, ignored: "no_firebase_user", orderId, credits },
+        { status: 200 },
+      );
+    }
+
+    if (result === "failed") {
+      return Response.json({ error: "credit_grant_failed" }, { status: 500 });
+    }
+
+    return Response.json(
+      {
+        ok: true,
+        orderId,
         variantId,
         credits,
-        note: "grant_credits_pending_db",
-      }),
+        grant: result,
+      },
+      { status: 200 },
     );
-
-    return Response.json({ ok: true, orderId: body.data.id, variantId, credits }, { status: 200 });
   }
 
   if (eventName === "order_refunded" && body.data?.type === "orders") {
-    console.info(
-      JSON.stringify({
-        source: "lemon-webhook",
-        event: "order_refunded",
-        orderId: body.data.id,
-        note: "handle_refund_pending",
-      }),
-    );
-    return Response.json({ ok: true, ignored: "refund_logged" }, { status: 200 });
+    const orderId = body.data.id;
+    const db = getAdminDb();
+    if (db && orderId != null) {
+      try {
+        await db
+          .collection("lemon_webhooks")
+          .doc(String(orderId))
+          .set({ refundedAt: FieldValue.serverTimestamp() }, { merge: true });
+      } catch (e) {
+        console.warn("lemon refund marker", e);
+      }
+    }
+    return Response.json({ ok: true, noted: "refund_logged" }, { status: 200 });
   }
 
   return Response.json({ ok: true, ignored: "event_not_handled", eventName }, { status: 200 });
