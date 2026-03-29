@@ -17,7 +17,20 @@ export default function UploadPage() {
     setUpload,
     updateSettings,
     generateFinal,
+    firebaseEnabled,
+    user,
+    authLoading,
+    creditsLoading,
   } = useRevvy();
+
+  const needSignIn = firebaseEnabled && !user;
+  const creditsBlocked = firebaseEnabled && (authLoading || creditsLoading);
+  const canGenerate =
+    draft.sourceUrl &&
+    !processing &&
+    credits >= 1 &&
+    !needSignIn &&
+    !creditsBlocked;
 
   return (
     <AppShell>
@@ -93,7 +106,7 @@ export default function UploadPage() {
             <div className="flex flex-wrap gap-3 pt-1">
               <Button
                 onClick={generateFinal}
-                disabled={!draft.sourceUrl || processing || credits < 1}
+                disabled={!canGenerate}
               >
                 {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {t(lang, "generate")} {t(lang, "generate_cost")}
@@ -101,10 +114,14 @@ export default function UploadPage() {
             </div>
 
             <div className="rounded-2xl border border-[color:var(--border)] bg-white px-4 py-3 text-xs text-[color:var(--muted)]">
-              {draft.sourceUrl ? (
+              {needSignIn ? (
+                t(lang, "sign_in_required")
+              ) : draft.sourceUrl ? (
                 <>
                   {t(lang, "generate_help_has_image")}{" "}
-                  <span className="font-semibold text-blue-900">{credits} kredi</span>
+                  <span className="font-semibold text-blue-900">
+                    {creditsLoading ? "…" : credits} {t(lang, "credits")}
+                  </span>
                 </>
               ) : (
                 t(lang, "generate_help_no_image")

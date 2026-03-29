@@ -4,6 +4,8 @@ export type RenderRequest = {
   imageUrl: string;
   settings: EditSettings;
   stage: RenderStage;
+  /** Firebase Auth ID token (final + sunucuda Admin SDK varsa zorunlu) */
+  idToken?: string;
 };
 
 export interface AiProvider {

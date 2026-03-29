@@ -6,9 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "firestore:ping": "node scripts/firestore-ping.mjs",
+    "firebase:login": "firebase login",
+    "firebase:deploy-rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.1",
     "openai": "^6.33.0",
@@ -20,8 +25,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "firebase-tools": "^15.12.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

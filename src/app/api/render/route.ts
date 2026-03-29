@@ -1,4 +1,10 @@
 import OpenAI from "openai";
+import {
+  consumeCredit,
+  getCredits,
+  verifyIdToken,
+} from "../../../lib/firebase/admin";
+import { isFirebaseAdminConfigured } from "../../../lib/firebase/config";
 
 export const runtime = "nodejs";
 
@@ -27,6 +33,12 @@ const BASE_QUALITY_PROMPT = [
   "Insan, yuz, plaka bilgisi gibi hassas detaylari gizle (plakayi blurla/maskele).",
 ].join("\n");
 
+function bearerToken(req: Request): string | null {
+  const h = req.headers.get("authorization");
+  if (!h?.startsWith("Bearer ")) return null;
+  return h.slice(7).trim() || null;
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Body;
@@ -42,12 +54,28 @@ export async function POST(req: Request) {
       );
     }
 
+    let firebaseUid: string | null = null;
+    if (body.stage === "final" && isFirebaseAdminConfigured()) {
+      const token = bearerToken(req);
+      if (!token) {
+        return Response.json({ error: "Giris gerekli" }, { status: 401 });
+      }
+      const decoded = await verifyIdToken(token);
+      if (!decoded) {
+        return Response.json({ error: "Gecersiz oturum" }, { status: 401 });
+      }
+      firebaseUid = decoded.uid;
+      const creditsNow = await getCredits(firebaseUid);
+      if (creditsNow < 1) {
+        return Response.json({ error: "Yetersiz kredi" }, { status: 403 });
+      }
+    }
+
     const { buffer, mimeType } = dataUrlToBuffer(body.imageDataUrl);
     const openai = new OpenAI({ apiKey });
 
     const prompt = `${BASE_QUALITY_PROMPT}\n\nKULLANICI ISTEGI:\n${body.userPrompt || ""}`.trim();
 
-    // gpt-image-1 supports image edits; response returns base64 data.
     const result = await openai.images.edit({
       model: "gpt-image-1",
       prompt,
@@ -66,13 +94,22 @@ export async function POST(req: Request) {
 
     const outDataUrl = `data:image/png;base64,${b64}`;
 
+    let creditsRemaining: number | undefined;
+    if (body.stage === "final" && firebaseUid) {
+      const spent = await consumeCredit(firebaseUid);
+      if (!spent.ok) {
+        return Response.json({ error: "Kredi guncellenemedi" }, { status: 409 });
+      }
+      creditsRemaining = spent.credits;
+    }
+
     return Response.json({
       url: outDataUrl,
       watermark: body.stage === "preview",
+      ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Bilinmeyen hata";
     return Response.json({ error: message }, { status: 500 });
   }
 }
-

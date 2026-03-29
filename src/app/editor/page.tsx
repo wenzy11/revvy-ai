@@ -16,7 +16,15 @@ export default function EditorPage() {
     updateSettings,
     generatePreview,
     generateFinal,
+    firebaseEnabled,
+    user,
+    authLoading,
+    creditsLoading,
   } = useRevvy();
+
+  const needSignIn = firebaseEnabled && !user;
+  const creditsBlocked = firebaseEnabled && (authLoading || creditsLoading);
+  const canFinal = !processing && credits >= 1 && !needSignIn && !creditsBlocked;
 
   if (!draft.sourceUrl) {
     return (
@@ -97,7 +105,7 @@ export default function EditorPage() {
 
                 <Button
                   onClick={generateFinal}
-                  disabled={processing || credits < 1}
+                  disabled={!canFinal}
                   className="w-full"
                 >
                   {processing ? (

@@ -9,6 +9,7 @@ const tr: Dict = {
   nav_pricing: "Fiyatlandırma",
   credits: "kredi",
   demo_login: "Demo Giriş",
+  google_sign_in: "Google ile giriş",
   logout: "Çıkış",
   language: "Dil",
 
@@ -27,6 +28,7 @@ const tr: Dict = {
   generate_cost: "(1 kredi)",
   generate_help_has_image: "Üretim 1 kredi harcar. Kalan:",
   generate_help_no_image: "Üretim için önce fotoğraf yükle.",
+  sign_in_required: "Üretim için Google ile giriş yap.",
 
   result_title: "Sonuç",
   result_subtitle: "Üretim tamamlanınca sonuç burada görünür.",
@@ -45,9 +47,10 @@ const tr: Dict = {
 
   pricing_title: "Kredi paketleri",
   pricing_subtitle: "Hesap açılışında 1 ücretsiz kredi. Her üretim 1 kredi harcar.",
-  pricing_usd_note: "Fiyatlar USD.",
+  pricing_usd_note: "Fiyatlar Lemon mağazasında TRY.",
   pricing_buy: "Satın al",
-  pricing_demo_note: "Demo: kredi ekler (ödeme bağlanmadı)",
+  pricing_demo_note: "Demo: kredi ekler (checkout URL yok)",
+  pricing_pay_note: "Ödeme Lemon Squeezy güvenli sayfasında tamamlanır.",
   pricing_feature_hd: "Yüksek çözünürlük final",
   pricing_feature_fast: "Hızlı üretim",
   pricing_feature_stack: "İstediğin kadar paket al",
@@ -61,6 +64,7 @@ const en: Dict = {
   nav_pricing: "Pricing",
   credits: "credits",
   demo_login: "Demo Login",
+  google_sign_in: "Sign in with Google",
   logout: "Logout",
   language: "Language",
 
@@ -79,6 +83,7 @@ const en: Dict = {
   generate_cost: "(1 credit)",
   generate_help_has_image: "Generation costs 1 credit. Remaining:",
   generate_help_no_image: "Upload a photo first to generate.",
+  sign_in_required: "Sign in with Google to generate.",
 
   result_title: "Result",
   result_subtitle: "When generation finishes, you’ll see it here.",
@@ -96,9 +101,10 @@ const en: Dict = {
 
   pricing_title: "Credit packs",
   pricing_subtitle: "1 free credit on signup. Each generation uses 1 credit.",
-  pricing_usd_note: "Prices in USD.",
+  pricing_usd_note: "Prices in TRY on Lemon.",
   pricing_buy: "Buy",
-  pricing_demo_note: "Demo: adds credits (payment not connected)",
+  pricing_demo_note: "Demo: adds credits (no checkout URL)",
+  pricing_pay_note: "Checkout opens on Lemon Squeezy.",
   pricing_feature_hd: "High-resolution final output",
   pricing_feature_fast: "Fast generation",
   pricing_feature_stack: "Buy as many packs as you need",

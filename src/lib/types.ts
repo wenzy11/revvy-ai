@@ -9,6 +9,8 @@ export type RenderedAsset = {
   stage: RenderStage;
   watermark: boolean;
   generatedAt: string;
+  /** Sunucu (Firestore) kalan kredi — Firebase akışında döner */
+  creditsRemaining?: number;
 };
 
 export type Project = {
@@ -23,4 +25,7 @@ export type Project = {
 
 export type AppUser = {
   email: string;
+  uid?: string;
+  name?: string;
+  photoURL?: string;
 };
