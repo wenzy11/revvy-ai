@@ -67,3 +67,15 @@ export function getFirebaseWebConfig(): FirebaseWebConfig | null {
 export function isFirebaseAdminConfigured(): boolean {
   return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim());
 }
+
+/** Service account JSON içinden (Vercel'de tek satır). parse başarısızsa null. */
+export function getServiceAccountProjectId(): string | null {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw) as { project_id?: string };
+    return typeof o.project_id === "string" && o.project_id ? o.project_id : null;
+  } catch {
+    return null;
+  }
+}

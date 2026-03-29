@@ -12,15 +12,21 @@ function getAdminApp(): App | null {
     return null;
   }
   try {
-    const cred = JSON.parse(raw) as ServiceAccount;
+    const cred = JSON.parse(raw) as ServiceAccount & { project_id?: string };
+    const projectId =
+      typeof cred.project_id === "string" && cred.project_id ? cred.project_id : undefined;
     adminApp =
       getApps().length > 0
         ? getApps()[0]!
         : initializeApp({
             credential: cert(cred),
+            ...(projectId ? { projectId } : {}),
           });
     return adminApp;
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[getAdminApp] FIREBASE_SERVICE_ACCOUNT_JSON parse/init:", e);
+    }
     adminApp = null;
     return null;
   }
@@ -42,9 +48,8 @@ export async function verifyIdToken(idToken: string) {
   try {
     return await auth.verifyIdToken(idToken);
   } catch (e) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[verifyIdToken]", e instanceof Error ? e.message : e);
-    }
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[verifyIdToken]", msg);
     return null;
   }
 }

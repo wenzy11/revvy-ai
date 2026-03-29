@@ -57,6 +57,9 @@ type RevvyContextValue = {
   processing: boolean;
   signInWithGoogle: () => Promise<void>;
   signInPending: boolean;
+  /** Giriş hatası (ör. redirect depolama); i18n anahtarı */
+  signInErrorKey: string | null;
+  clearSignInError: () => void;
   signOut: () => Promise<void>;
   topUpCredits: (amount: number) => void;
   setUpload: (file: File) => Promise<void>;
@@ -70,6 +73,15 @@ const RevvyContext = createContext<RevvyContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "revvy-ai-app-state-v4";
 const STORAGE_KEY_LEGACY = "revvy-ai-app-state-v3";
+
+function isRedirectStorageError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  return (
+    msg.includes("missing initial state") ||
+    msg.includes("sessionStorage") ||
+    msg.includes("storage-partitioned")
+  );
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -86,6 +98,9 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState<number>(0);
   const [processing, setProcessing] = useState(false);
   const [signInPending, setSignInPending] = useState(false);
+  const [signInErrorKey, setSignInErrorKey] = useState<string | null>(null);
+
+  const clearSignInError = useCallback(() => setSignInErrorKey(null), []);
   /** İlk onAuthStateChanged gelene kadar true — aksi halde config API’den gelirken duvar bir frame görünüp oturumu “yok” sanıyor */
   const [authLoading, setAuthLoading] = useState(true);
   const [creditsLoading, setCreditsLoading] = useState(false);
@@ -101,13 +116,32 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
   const firebaseConfigResolving = !publicConfigTried;
 
   useEffect(() => {
-    if (getFirebaseWebConfig()) return;
     let cancelled = false;
     fetch("/api/public-config")
-      .then((r) => r.json() as Promise<{ firebase: FirebaseWebConfig | null }>)
+      .then(
+        (r) =>
+          r.json() as Promise<{
+            firebase: FirebaseWebConfig | null;
+            adminProjectId?: string | null;
+          }>,
+      )
       .then((data) => {
         if (cancelled) return;
-        setFirebaseClientOverride(data.firebase ?? null);
+        if (!getFirebaseWebConfig()) {
+          setFirebaseClientOverride(data.firebase ?? null);
+        }
+        const webPid = data.firebase?.projectId;
+        const adminPid = data.adminProjectId ?? null;
+        if (webPid && adminPid && webPid !== adminPid) {
+          console.error(
+            `[Revvy] Proje uyusmazligi: web projectId="${webPid}" / Vercel service account project_id="${adminPid}". Firestore yazilari bootstrap ile bu projede olmaz.`,
+          );
+        }
+        if (webPid && !adminPid) {
+          console.warn(
+            "[Revvy] Vercel'de FIREBASE_SERVICE_ACCOUNT_JSON yok veya project_id okunamadi — Firestore'a sunucu yazamaz.",
+          );
+        }
         setConfigTick((n) => n + 1);
       })
       .catch(() => {
@@ -204,6 +238,9 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
         await auth.authStateReady();
       } catch (err) {
         console.error("getRedirectResult", err);
+        if (!cancelled && isRedirectStorageError(err)) {
+          setSignInErrorKey("auth_storage_error");
+        }
       }
       if (cancelled) return;
 
@@ -231,7 +268,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
         void (async () => {
           try {
             const token = await fbUser.getIdToken();
-            await fetch("/api/auth/bootstrap", {
+            const res = await fetch("/api/auth/bootstrap", {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
               signal:
@@ -239,8 +276,12 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
                   ? AbortSignal.timeout(15_000)
                   : undefined,
             });
-          } catch {
-            // bootstrap 503 / ağ — Firestore snapshot yine çalışır
+            const body = await res.text();
+            if (!res.ok) {
+              console.error("[Revvy bootstrap]", res.status, body);
+            }
+          } catch (e) {
+            console.error("[Revvy bootstrap] ag hatasi", e);
           }
         })();
 
@@ -271,6 +312,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
     const auth = getFirebaseAuth();
     if (!auth) return;
 
+    setSignInErrorKey(null);
     setSignInPending(true);
     try {
       const provider = new GoogleAuthProvider();
@@ -278,22 +320,20 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       provider.addScope("email");
       provider.setCustomParameters({ prompt: "select_account" });
 
-      const host = typeof window !== "undefined" ? window.location.hostname : "";
-      const localDev = host === "localhost" || host === "127.0.0.1";
-
-      if (localDev) {
-        try {
-          await signInWithPopup(auth, provider);
-          setSignInPending(false);
-          return;
-        } catch (e) {
-          console.warn("signInWithPopup failed, trying redirect", e);
-        }
+      try {
+        await signInWithPopup(auth, provider);
+        setSignInPending(false);
+        return;
+      } catch (popupErr) {
+        console.warn("signInWithPopup failed, trying redirect", popupErr);
       }
 
       await signInWithRedirect(auth, provider);
     } catch (e) {
       console.error("signInWithGoogle", e);
+      if (isRedirectStorageError(e)) {
+        setSignInErrorKey("auth_storage_error");
+      }
       setSignInPending(false);
     }
   }, []);
@@ -412,6 +452,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       processing,
       signInWithGoogle,
       signInPending,
+      signInErrorKey,
+      clearSignInError,
       signOut,
       topUpCredits,
       setUpload,
@@ -433,6 +475,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       processing,
       signInWithGoogle,
       signInPending,
+      signInErrorKey,
+      clearSignInError,
       signOut,
       topUpCredits,
       setUpload,

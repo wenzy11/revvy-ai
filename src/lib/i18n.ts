@@ -15,8 +15,11 @@ const tr: Dict = {
   auth_wall_subtitle:
     "Revvy AI araç fotoğraflarını stüdyo kalitesine taşır. Kredilerin ve üretimlerin hesabında güvenle saklanır.",
   auth_wall_hint: "İlk girişte hesabına 1 ücretsiz kredi tanımlanır.",
-  auth_wall_redirect_note: "Google’a yönlendirileceksin; tamamla ve bu sayfaya geri dön.",
+  auth_wall_redirect_note:
+    "Önce küçük pencerede (popup) giriş denenir; olmazsa Google’a yönlendirilirsin. Gizli sekme veya Instagram/TikTok içi tarayıcıda sorun çıkabilir.",
   auth_checking: "Oturum kontrol ediliyor…",
+  auth_storage_error:
+    "Giriş tamamlanamadı: tarayıcı depolaması kapalı veya bölümlenmiş (gizli sekme, uygulama içi tarayıcı, sıkı gizlilik). Safari veya Chrome’da normal sekmede siteyi açmayı dene.",
   firebase_missing_title: "Firebase yapılandırması eksik",
   firebase_missing_body:
     "Sunucuda FIREBASE_WEB_CONFIG_JSON ve FIREBASE_SERVICE_ACCOUNT_JSON tanımlı olmalı. Vercel Environment Variables’ı kontrol et.",
@@ -80,8 +83,11 @@ const en: Dict = {
   auth_wall_subtitle:
     "Revvy AI upgrades car photos to studio quality. Your credits and work stay tied to your account.",
   auth_wall_hint: "You get 1 free credit on first sign-in.",
-  auth_wall_redirect_note: "You’ll be sent to Google, then return here.",
+  auth_wall_redirect_note:
+    "We try a small sign-in window first; if that fails you’ll be redirected to Google. Private tabs or in-app browsers (Instagram, etc.) often break this.",
   auth_checking: "Checking session…",
+  auth_storage_error:
+    "Sign-in couldn’t finish: storage is blocked or partitioned (private mode, in-app browser, strict privacy). Open the site in a normal Safari or Chrome tab.",
   firebase_missing_title: "Firebase is not configured",
   firebase_missing_body:
     "Set FIREBASE_WEB_CONFIG_JSON and FIREBASE_SERVICE_ACCOUNT_JSON on the server (e.g. Vercel env).",

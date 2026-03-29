@@ -16,6 +16,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     firebaseConfigResolving,
     signInWithGoogle,
     signInPending,
+    signInErrorKey,
+    clearSignInError,
   } = useRevvy();
 
   if (firebaseConfigResolving) {
@@ -62,11 +64,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
               {t(lang, "auth_wall_subtitle")}
             </p>
             <p className="text-xs text-blue-800/80">{t(lang, "auth_wall_hint")}</p>
+            {signInErrorKey ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-800">
+                {t(lang, signInErrorKey as "auth_storage_error")}
+              </p>
+            ) : null}
           </div>
           <Button
             className="h-12 w-full text-base"
             disabled={signInPending}
             onClick={() => {
+              clearSignInError();
               void signInWithGoogle();
             }}
           >
