@@ -8,7 +8,42 @@ export type FirebaseWebConfig = {
   measurementId?: string;
 };
 
+/** Tek satır: Console’daki `firebaseConfig` objesi (service account JSON’u DEĞİL). */
+function parseBundledWebConfig(): FirebaseWebConfig | null {
+  const raw =
+    process.env.FIREBASE_WEB_CONFIG_JSON?.trim() ||
+    process.env.NEXT_PUBLIC_FIREBASE_CONFIG?.trim();
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw) as Record<string, unknown>;
+    const apiKey = String(o.apiKey ?? "");
+    const authDomain = String(o.authDomain ?? "");
+    const projectId = String(o.projectId ?? "");
+    const storageBucket = String(o.storageBucket ?? "");
+    const messagingSenderId = String(o.messagingSenderId ?? "");
+    const appId = String(o.appId ?? "");
+    if (!apiKey || !authDomain || !projectId || !storageBucket || !messagingSenderId || !appId) {
+      return null;
+    }
+    const measurementId = o.measurementId != null ? String(o.measurementId) : undefined;
+    return {
+      apiKey,
+      authDomain,
+      projectId,
+      storageBucket,
+      messagingSenderId,
+      appId,
+      ...(measurementId ? { measurementId } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function getFirebaseWebConfig(): FirebaseWebConfig | null {
+  const bundled = parseBundledWebConfig();
+  if (bundled) return bundled;
+
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
