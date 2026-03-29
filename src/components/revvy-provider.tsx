@@ -86,7 +86,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState<number>(0);
   const [processing, setProcessing] = useState(false);
   const [signInPending, setSignInPending] = useState(false);
-  const [authLoading, setAuthLoading] = useState(() => hasFirebaseClientConfig());
+  /** İlk onAuthStateChanged gelene kadar true — aksi halde config API’den gelirken duvar bir frame görünüp oturumu “yok” sanıyor */
+  const [authLoading, setAuthLoading] = useState(true);
   const [creditsLoading, setCreditsLoading] = useState(false);
   const [draft, setDraft] = useState<Draft>({
     settings: DEFAULT_SETTINGS,
@@ -184,6 +185,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setAuthLoading(true);
+
     const auth = getFirebaseAuth();
     const db = getFirebaseDb();
     if (!auth || !db) {
@@ -191,66 +194,75 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    void getRedirectResult(auth).catch((err) => {
-      console.error("getRedirectResult", err);
-    });
-
     let unsubDoc: (() => void) | undefined;
+    let unsubAuth: (() => void) | undefined;
+    let cancelled = false;
 
-    const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
-      unsubDoc?.();
-      unsubDoc = undefined;
-
-      if (!fbUser) {
-        setUser(null);
-        setCredits(0);
-        setCreditsLoading(false);
-        setAuthLoading(false);
-        return;
+    void (async () => {
+      try {
+        await getRedirectResult(auth);
+        await auth.authStateReady();
+      } catch (err) {
+        console.error("getRedirectResult", err);
       }
+      if (cancelled) return;
 
-      setCreditsLoading(true);
-      setUser({
-        email: fbUser.email ?? "",
-        uid: fbUser.uid,
-        name: fbUser.displayName ?? undefined,
-        photoURL: fbUser.photoURL ?? undefined,
-      });
-      setAuthLoading(false);
+      unsubAuth = onAuthStateChanged(auth, (fbUser) => {
+        unsubDoc?.();
+        unsubDoc = undefined;
 
-      void (async () => {
-        try {
-          const token = await fbUser.getIdToken();
-          await fetch("/api/auth/bootstrap", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            signal:
-              typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
-                ? AbortSignal.timeout(15_000)
-                : undefined,
-          });
-        } catch {
-          // bootstrap 503 / ağ — Firestore snapshot yine çalışır
-        }
-      })();
-
-      const ref = doc(db, "users", fbUser.uid);
-      unsubDoc = onSnapshot(
-        ref,
-        (snap) => {
-          const c = snap.data()?.credits;
-          setCredits(typeof c === "number" ? c : 0);
-          setCreditsLoading(false);
-        },
-        () => {
+        if (!fbUser) {
+          setUser(null);
           setCredits(0);
           setCreditsLoading(false);
-        },
-      );
-    });
+          setAuthLoading(false);
+          return;
+        }
+
+        setCreditsLoading(true);
+        setUser({
+          email: fbUser.email ?? "",
+          uid: fbUser.uid,
+          name: fbUser.displayName ?? undefined,
+          photoURL: fbUser.photoURL ?? undefined,
+        });
+        setAuthLoading(false);
+
+        void (async () => {
+          try {
+            const token = await fbUser.getIdToken();
+            await fetch("/api/auth/bootstrap", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              signal:
+                typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+                  ? AbortSignal.timeout(15_000)
+                  : undefined,
+            });
+          } catch {
+            // bootstrap 503 / ağ — Firestore snapshot yine çalışır
+          }
+        })();
+
+        const ref = doc(db, "users", fbUser.uid);
+        unsubDoc = onSnapshot(
+          ref,
+          (snap) => {
+            const c = snap.data()?.credits;
+            setCredits(typeof c === "number" ? c : 0);
+            setCreditsLoading(false);
+          },
+          () => {
+            setCredits(0);
+            setCreditsLoading(false);
+          },
+        );
+      });
+    })();
 
     return () => {
-      unsubAuth();
+      cancelled = true;
+      unsubAuth?.();
       unsubDoc?.();
     };
   }, [firebaseEnabled]);
