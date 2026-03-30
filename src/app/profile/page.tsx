@@ -6,7 +6,6 @@ import {
   collection,
   getDocs,
   limit,
-  orderBy,
   query,
   where,
   type Timestamp,
@@ -72,8 +71,7 @@ export default function ProfilePage() {
       const q = query(
         collection(db, "lemon_webhooks"),
         where("uid", "==", uid),
-        orderBy("completedAt", "desc"),
-        limit(10),
+        limit(50),
       );
 
       try {
@@ -104,6 +102,13 @@ export default function ProfilePage() {
                 : undefined,
           };
         });
+
+        const timeOf = (p: Purchase): number => {
+          const t = p.completedAt ?? p.createdAt;
+          return t ? t.toDate().getTime() : 0;
+        };
+
+        rows.sort((a, b) => timeOf(b) - timeOf(a));
         setPurchases(rows);
       } catch (e) {
         if (cancelled) return;

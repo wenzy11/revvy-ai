@@ -7,7 +7,12 @@ service cloud.firestore {
     }
     // Lemon webhook idempotency — sadece Admin SDK yazar
     match /lemon_webhooks/{id} {
-      allow read, write: if false;
+      // Client sadece kendi ödeme geçmişini okuyabilsin.
+      // Admin SDK write yapmaya devam eder (write: false).
+      allow read: if request.auth != null
+        && resource.data.uid is string
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;
     }
   }
 }
