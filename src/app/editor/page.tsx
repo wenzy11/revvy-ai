@@ -23,7 +23,7 @@ export default function EditorPage() {
 
   const creditsBlocked = authLoading || creditsLoading;
   const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
-  const spendCredits = photoCount === 1 ? 2 : photoCount;
+  const spendCredits = photoCount * 2;
   const canFinal = !processing && credits >= spendCredits && !creditsBlocked;
 
   if (!draft.sourceUrl) {

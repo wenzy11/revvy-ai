@@ -60,7 +60,7 @@ const tr: Dict = {
 
   pricing_title: "Kredi paketleri",
   pricing_subtitle:
-    "Hesap açılışında 1 ücretsiz kredi. 1 foto 2 kredi, 2+ foto için her foto 1 kredi harcar.",
+    "Hesap açılışında 1 ücretsiz kredi. Her foto 2 kredi harcar.",
   pricing_usd_note: "Fiyatlar Lemon mağazasında TRY.",
   pricing_buy: "Satın al",
   pricing_demo_note: "Demo: kredi ekler (checkout URL yok)",

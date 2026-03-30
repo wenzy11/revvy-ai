@@ -23,7 +23,7 @@ export default function UploadPage() {
 
   const creditsBlocked = authLoading || creditsLoading;
   const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
-  const spendCredits = photoCount === 1 ? 2 : photoCount;
+  const spendCredits = photoCount * 2;
   const canGenerate =
     draft.sourceUrl && !processing && credits >= spendCredits && !creditsBlocked;
 
@@ -135,8 +135,8 @@ export default function UploadPage() {
               </select>
               <div className="mt-2 text-xs text-[color:var(--muted)]">
                 {lang === "tr"
-                  ? `Finalde toplam ${spendCredits} kredi harcar (1 foto: 2 kredi, 2+ foto: 1 kredi/foto).`
-                  : `Final costs ${spendCredits} credits total (1 photo: 2 credits, 2+ photos: 1 credit/photo).`}
+                  ? `Finalde toplam ${spendCredits} kredi harcar (her foto 2 kredi).`
+                  : `Final costs ${spendCredits} credits total (2 credits per photo).`}
               </div>
             </div>
 

@@ -74,8 +74,8 @@ function clampPhotoCount(photoCount: number | undefined): number {
 }
 
 function creditsToSpend(photoCount: number): number {
-  // 1 foto icin ekstra ucret: 1 foto = 2 kredi
-  return photoCount === 1 ? 2 : photoCount;
+  // Her foto 2 kredi.
+  return photoCount * 2;
 }
 
 function poseVariation(i: number, photoCount: number): string {
@@ -84,20 +84,20 @@ function poseVariation(i: number, photoCount: number): string {
     if (i === 0) {
       return [
         "POZISYON 1/3: ON GORUNUM (aracin on kaputu/kasa önü kameraya dönük).",
-        "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+        "Aracin O(N) yönü kameraya doğru olmalı (ön taraf net görünsün).",
         "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
       ].join("\n");
     }
     if (i === 1) {
       return [
         "POZISYON 2/3: ARKA GORUNUM (aracin arka bagaj bölümü kameraya dönük).",
-        "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+        "Aracin O(N) yönü tersine dönmeli: arka taraf kameraya bakmalı, ön taraf görünmemeli.",
         "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
       ].join("\n");
     }
     return [
       "POZISYON 3/3: YAN GORUNUM (aracin yan cephesi 3/4 aci ile kameraya dönük).",
-      "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+      "Aracin yönünü degistir: arac kameraya yan cepheden görünmeli (ön/arka fark edilir şekilde dönük olsun).",
       "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
     ].join("\n");
   }
@@ -106,7 +106,9 @@ function poseVariation(i: number, photoCount: number): string {
   if (photoCount === 2) {
     return [
       `POZISYON ${i + 1}/${photoCount}: Kamerayi öne/arkaya alacak sekilde perspektif degissin.`,
-      "Aracin ayni konumda kaldigi varsayilsin; sadece kadraj/perspektif degissin.",
+      i === 0
+        ? "Aracin ön tarafı kameraya dönük olmalı."
+        : "Aracin arka tarafı kameraya dönük olmalı (ön taraf görüntüden uzak).",
       "Aracin rengi, modeli ve temel detaylari korunmali.",
     ].join("\n");
   }

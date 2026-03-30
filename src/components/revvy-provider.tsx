@@ -414,7 +414,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
 
   const generateFinal = useCallback(async () => {
     const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
-    const spendCredits = photoCount === 1 ? 2 : photoCount;
+    const spendCredits = photoCount * 2;
     if (!draft.sourceUrl || credits < spendCredits) return;
     if (firebaseEnabled) {
       const auth = getFirebaseAuth();
