@@ -237,6 +237,45 @@ export default function ProfilePage() {
             )}
           </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader
+            title={t(lang, "profile_support_title")}
+            subtitle={
+              lang === "tr"
+                ? "Soruların için bize e-posta gönder."
+                : "Send us an email for questions."
+            }
+          />
+          <CardBody>
+            <div className="rounded-xl border border-[color:var(--border)] bg-white p-4">
+              <div className="text-sm font-semibold text-blue-950">
+                {t(lang, "profile_support_email")}
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--muted)]">
+                {t(lang, "profile_support_hint")}
+              </div>
+              <div className="mt-4">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    const to = "wenzykerem@gmail.com";
+                    const subject = lang === "tr" ? "Revvy AI Destek" : "Revvy AI Support";
+                    const body =
+                      lang === "tr"
+                        ? "Merhaba,\n\nSorunum / sorum:\n"
+                        : "Hi,\n\nMy issue / question:\n";
+                    window.location.href = `mailto:${to}?subject=${encodeURIComponent(
+                      subject,
+                    )}&body=${encodeURIComponent(body)}`;
+                  }}
+                >
+                  {t(lang, "profile_support_button")}
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </section>
     </AppShell>
   );

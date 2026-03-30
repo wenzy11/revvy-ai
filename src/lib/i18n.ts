@@ -75,6 +75,10 @@ const tr: Dict = {
   profile_account: "Hesap",
   profile_credits: "Krediler",
   profile_history: "Satın alma geçmişi",
+  profile_support_title: "Destek",
+  profile_support_email: "wenzykerem@gmail.com",
+  profile_support_hint: "Genel sorular ve destek için bize yaz.",
+  profile_support_button: "E-posta gönder",
 };
 
 const en: Dict = {
@@ -149,6 +153,10 @@ const en: Dict = {
   profile_account: "Account",
   profile_credits: "Credits",
   profile_history: "Purchase history",
+  profile_support_title: "Support",
+  profile_support_email: "wenzykerem@gmail.com",
+  profile_support_hint: "Email us for questions and support.",
+  profile_support_button: "Send email",
 };
 
 const dictionaries: Record<Lang, Dict> = { tr, en };
