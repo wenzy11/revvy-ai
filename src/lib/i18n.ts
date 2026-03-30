@@ -7,6 +7,7 @@ const tr: Dict = {
   nav_upload: "Yükle",
   nav_projects: "Projeler",
   nav_pricing: "Fiyatlandırma",
+  nav_profile: "Profil",
   credits: "kredi",
   demo_login: "Demo Giriş",
   google_sign_in: "Google ile giriş",
@@ -69,6 +70,11 @@ const tr: Dict = {
   pricing_feature_fast: "Hızlı üretim",
   pricing_feature_stack: "İstediğin kadar paket al",
   pricing_popular: "Popüler",
+
+  profile_title: "Profil",
+  profile_account: "Hesap",
+  profile_credits: "Krediler",
+  profile_history: "Satın alma geçmişi",
 };
 
 const en: Dict = {
@@ -76,6 +82,7 @@ const en: Dict = {
   nav_upload: "Upload",
   nav_projects: "Projects",
   nav_pricing: "Pricing",
+  nav_profile: "Profile",
   credits: "credits",
   demo_login: "Demo Login",
   google_sign_in: "Sign in with Google",
@@ -137,6 +144,11 @@ const en: Dict = {
   pricing_feature_fast: "Fast generation",
   pricing_feature_stack: "Buy as many packs as you need",
   pricing_popular: "Popular",
+
+  profile_title: "Profile",
+  profile_account: "Account",
+  profile_credits: "Credits",
+  profile_history: "Purchase history",
 };
 
 const dictionaries: Record<Lang, Dict> = { tr, en };

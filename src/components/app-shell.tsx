@@ -12,6 +12,7 @@ const links = [
   { href: "/", key: "nav_home" as const },
   { href: "/upload", key: "nav_upload" as const },
   { href: "/pricing", key: "nav_pricing" as const },
+  { href: "/profile", key: "nav_profile" as const },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
