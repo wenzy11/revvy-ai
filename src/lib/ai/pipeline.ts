@@ -13,11 +13,14 @@ export async function runAiPipeline(request: RenderRequest) {
       imageDataUrl: request.imageUrl,
       userPrompt: request.settings.promptText,
       stage: request.stage,
+      photoCount: request.settings.photoCount,
+      plateOption: request.settings.plateOption,
+      plateText: request.settings.plateText,
     }),
   });
 
   const payload = (await res.json()) as
-    | { url: string; watermark: boolean; creditsRemaining?: number }
+    | { urls: string[]; watermark: boolean; creditsRemaining?: number }
     | { error: string };
 
   if (!res.ok || "error" in payload) {
@@ -25,7 +28,7 @@ export async function runAiPipeline(request: RenderRequest) {
   }
 
   return {
-    url: payload.url,
+    urls: payload.urls,
     stage: request.stage,
     watermark: payload.watermark,
     generatedAt: new Date().toISOString(),

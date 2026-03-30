@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Download, ImageIcon, Loader2, Sparkles } from "lucide-react";
 import { AppShell } from "../../components/app-shell";
 import { BeforeAfter } from "../../components/before-after";
@@ -21,7 +22,8 @@ export default function EditorPage() {
   } = useRevvy();
 
   const creditsBlocked = authLoading || creditsLoading;
-  const canFinal = !processing && credits >= 1 && !creditsBlocked;
+  const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
+  const canFinal = !processing && credits >= photoCount && !creditsBlocked;
 
   if (!draft.sourceUrl) {
     return (
@@ -72,6 +74,68 @@ export default function EditorPage() {
 
               <div className="space-y-3 rounded-2xl border border-[color:var(--border)] bg-white p-4">
                 <div className="rounded-xl border border-[color:var(--border)] bg-blue-50/40 p-3">
+                  <div className="mb-3 rounded-xl border border-[color:var(--border)] bg-white/70 p-3">
+                    <div className="mb-2 text-sm font-semibold text-blue-950">
+                      Foto Sayısı
+                    </div>
+                    <select
+                      value={photoCount}
+                      onChange={(event) =>
+                        updateSettings({ photoCount: Number(event.target.value) })
+                      }
+                      className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
+                    >
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="mt-2 text-xs text-[color:var(--muted)]">
+                      {photoCount} {photoCount === 1 ? "kredi" : "kredi"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-3">
+                    <div className="mb-2 text-sm font-semibold text-blue-950">
+                      Plaka Tercihi
+                    </div>
+                    <select
+                      value={draft.settings.plateOption}
+                      onChange={(event) =>
+                        updateSettings({
+                          plateOption:
+                            event.target.value === "none" ? "none" : "blurred",
+                        })
+                      }
+                      className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
+                    >
+                      <option value="blurred">Bulanık plaka</option>
+                      <option value="none">Plakasız</option>
+                    </select>
+                  </div>
+
+                  {draft.settings.plateOption === "blurred" ? (
+                    <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-3">
+                      <div className="mb-2 text-sm font-semibold text-blue-950">
+                        Plaka Metni
+                      </div>
+                      <input
+                        type="text"
+                        value={draft.settings.plateText}
+                        onChange={(event) =>
+                          updateSettings({ plateText: event.target.value })
+                        }
+                        placeholder="Örn: 34 ABC 1234"
+                        className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-3 text-xs text-[color:var(--muted)]">
+                      {`Plakasız seçildiğinde plaka tamamen kaldırılır.`}
+                    </div>
+                  )}
+
                   <label className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-blue-950">
                     <Sparkles className="h-4 w-4 text-[color:var(--brand)]" />
                     Duzenleme Promptu
@@ -110,20 +174,36 @@ export default function EditorPage() {
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  Final Render Al
+                  Final Render Al ({photoCount} kredi)
                 </Button>
 
-                {draft.final ? (
-                  <a
-                    href={draft.final.url}
-                    download="revvy-ai-final.png"
-                    className="block rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-700"
-                  >
-                    Final Goruntuyu Indir
-                  </a>
+                {draft.finals?.length ? (
+                  <div className="space-y-3 rounded-xl border border-[color:var(--border)] bg-white px-4 py-3">
+                    {draft.finals.map((final, idx) => (
+                      <div key={final.url} className="space-y-2">
+                        <div className="relative h-28 overflow-hidden rounded-xl border border-[color:var(--border)] bg-blue-50/30">
+                          <ImageIcon className="absolute left-2 top-2 h-6 w-6 text-[color:var(--muted)]" />
+                          <Image
+                            src={final.url}
+                            alt={`Final ${idx + 1}`}
+                            fill
+                            unoptimized
+                            className="object-contain"
+                          />
+                        </div>
+                        <a
+                          href={final.url}
+                          download={`revvy-ai-final-${idx + 1}.png`}
+                          className="block rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-700"
+                        >
+                          Final Goruntuyu Indir {idx + 1}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-xs text-[color:var(--muted)]">
-                    Final icin en az 1 kredi gerekir.
+                    {`Final icin en az ${photoCount} kredi gerekir.`}
                   </div>
                 )}
 

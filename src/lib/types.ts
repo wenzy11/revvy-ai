@@ -1,5 +1,13 @@
+export type PlateOption = "blurred" | "none";
+
 export type EditSettings = {
   promptText: string;
+  /** Finalde istenen foto sayısı. Her foto 1 kredi harcar. */
+  photoCount: number;
+  /** Plakayı nasıl ele alalım? */
+  plateOption: PlateOption;
+  /** Plakada yazacak metin (örn: 34 ABC 1234). */
+  plateText: string;
 };
 
 export type RenderStage = "preview" | "final";

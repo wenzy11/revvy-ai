@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "firestore:ping": "node scripts/firestore-ping.mjs",
+    "grant-credits": "node scripts/grant-credits.mjs",
     "firebase:login": "firebase login",
     "firebase:deploy-rules": "firebase deploy --only firestore:rules"
   },

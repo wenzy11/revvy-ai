@@ -59,7 +59,8 @@ const tr: Dict = {
   after_pro: "SONRA - PROFESYONEL ÇEKİM",
 
   pricing_title: "Kredi paketleri",
-  pricing_subtitle: "Hesap açılışında 1 ücretsiz kredi. Her üretim 1 kredi harcar.",
+  pricing_subtitle:
+    "Hesap açılışında 1 ücretsiz kredi. Her foto 1 kredi harcar.",
   pricing_usd_note: "Fiyatlar Lemon mağazasında TRY.",
   pricing_buy: "Satın al",
   pricing_demo_note: "Demo: kredi ekler (checkout URL yok)",
@@ -126,7 +127,7 @@ const en: Dict = {
   after_pro: "AFTER - PROFESSIONAL",
 
   pricing_title: "Credit packs",
-  pricing_subtitle: "1 free credit on signup. Each generation uses 1 credit.",
+  pricing_subtitle: "1 free credit on signup. Each photo costs 1 credit.",
   pricing_usd_note: "Prices in TRY on Lemon.",
   pricing_buy: "Buy",
   pricing_demo_note: "Demo: adds credits (no checkout URL)",

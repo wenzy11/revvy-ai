@@ -32,6 +32,9 @@ import type { AppUser, EditSettings, RenderedAsset } from "../lib/types";
 const DEFAULT_SETTINGS: EditSettings = {
   promptText:
     "Araci profesyonel otomotiv studyosunda cekilmis gibi duzenle. Arka plan temiz ve premium olsun.",
+  photoCount: 1,
+  plateOption: "blurred",
+  plateText: "",
 };
 
 type Draft = {
@@ -39,7 +42,7 @@ type Draft = {
   fileName?: string;
   settings: EditSettings;
   preview?: RenderedAsset;
-  final?: RenderedAsset;
+  finals?: RenderedAsset[];
 };
 
 type RevvyContextValue = {
@@ -366,7 +369,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       sourceUrl,
       fileName: file.name,
       preview: undefined,
-      final: undefined,
+      finals: undefined,
     }));
   }, []);
 
@@ -388,25 +391,37 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
     try {
       const preview = await runAiPipeline({
         imageUrl: draft.sourceUrl,
-        settings: draft.settings,
+        // Preview, kredi harcamadan 1 görsel üretir.
+        settings: { ...draft.settings, photoCount: 1 },
         stage: "preview",
         idToken,
       });
-      setDraft((prev) => ({ ...prev, preview }));
+      const firstUrl = preview.urls?.[0];
+      if (!firstUrl) return;
+      setDraft((prev) => ({
+        ...prev,
+        preview: {
+          url: firstUrl,
+          stage: "preview",
+          watermark: preview.watermark,
+          generatedAt: preview.generatedAt,
+        },
+      }));
     } finally {
       setProcessing(false);
     }
   }, [draft.settings, draft.sourceUrl, firebaseEnabled]);
 
   const generateFinal = useCallback(async () => {
-    if (!draft.sourceUrl || credits < 1) return;
+    const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
+    if (!draft.sourceUrl || credits < photoCount) return;
     if (firebaseEnabled) {
       const auth = getFirebaseAuth();
       if (!auth?.currentUser) return;
     }
 
     setProcessing(true);
-    setDraft((prev) => ({ ...prev, preview: undefined, final: undefined }));
+    setDraft((prev) => ({ ...prev, preview: undefined, finals: undefined }));
 
     try {
       const auth = getFirebaseAuth();
@@ -425,10 +440,19 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       if (typeof final.creditsRemaining === "number") {
         setCredits(final.creditsRemaining);
       } else if (!firebaseEnabled) {
-        setCredits((prev) => prev - 1);
+        setCredits((prev) => prev - photoCount);
       }
 
-      setDraft((prev) => ({ ...prev, final }));
+      const urls = final.urls ?? [];
+      setDraft((prev) => ({
+        ...prev,
+        finals: urls.map((url) => ({
+          url,
+          stage: "final",
+          watermark: false,
+          generatedAt: final.generatedAt,
+        })),
+      }));
     } finally {
       setProcessing(false);
     }

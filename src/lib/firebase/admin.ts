@@ -119,6 +119,33 @@ export async function consumeCredit(uid: string): Promise<{ ok: true; credits: n
   }
 }
 
+export async function consumeCredits(
+  uid: string,
+  amount: number,
+): Promise<{ ok: true; credits: number } | { ok: false }> {
+  const db = getAdminDb();
+  if (!db) return { ok: false };
+  const ref = db.collection("users").doc(uid);
+  const a = Math.floor(amount);
+  if (!Number.isFinite(a) || a < 1) return { ok: false };
+
+  try {
+    const newCredits = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.data() as { credits?: number } | undefined;
+      const current = typeof data?.credits === "number" ? data.credits : 0;
+      if (current < a) return null;
+      const next = current - a;
+      tx.update(ref, { credits: next, updatedAt: FieldValue.serverTimestamp() });
+      return next;
+    });
+    if (newCredits === null) return { ok: false };
+    return { ok: true, credits: newCredits };
+  } catch {
+    return { ok: false };
+  }
+}
+
 export async function addCredits(uid: string, amount: number): Promise<boolean> {
   if (amount < 1) return false;
   const db = getAdminDb();
