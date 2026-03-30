@@ -23,8 +23,9 @@ export default function UploadPage() {
 
   const creditsBlocked = authLoading || creditsLoading;
   const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
+  const spendCredits = photoCount === 1 ? 2 : photoCount;
   const canGenerate =
-    draft.sourceUrl && !processing && credits >= photoCount && !creditsBlocked;
+    draft.sourceUrl && !processing && credits >= spendCredits && !creditsBlocked;
 
   const plateLabel =
     draft.settings.plateOption === "none"
@@ -40,7 +41,9 @@ export default function UploadPage() {
           : "Blurred plate";
 
   const costText =
-    lang === "tr" ? `(${photoCount} kredi)` : `(${photoCount} credit${photoCount === 1 ? "" : "s"})`;
+    lang === "tr"
+      ? `(${spendCredits} kredi)`
+      : `(${spendCredits} credit${spendCredits === 1 ? "" : "s"})`;
 
   return (
     <AppShell>
@@ -132,8 +135,8 @@ export default function UploadPage() {
               </select>
               <div className="mt-2 text-xs text-[color:var(--muted)]">
                 {lang === "tr"
-                  ? `Finalde her foto 1 kredi harcar (toplam ${photoCount} kredi).`
-                  : `Final costs 1 credit per photo (total ${photoCount} credits).`}
+                  ? `Finalde toplam ${spendCredits} kredi harcar (1 foto: 2 kredi, 2+ foto: 1 kredi/foto).`
+                  : `Final costs ${spendCredits} credits total (1 photo: 2 credits, 2+ photos: 1 credit/photo).`}
               </div>
             </div>
 
@@ -214,8 +217,10 @@ export default function UploadPage() {
               {draft.sourceUrl ? (
                 <>
                   {lang === "tr"
-                    ? `Üretim ${photoCount} kredi harcar. Kalan:`
-                    : `Generation costs ${photoCount} credit${photoCount === 1 ? "" : "s"}. Remaining:`}{" "}
+                    ? `Üretim ${spendCredits} kredi harcar. Kalan:`
+                    : `Generation costs ${spendCredits} credit${
+                        spendCredits === 1 ? "" : "s"
+                      }. Remaining:`}{" "}
                   <span className="font-semibold text-blue-900">
                     {creditsLoading ? "…" : credits} {t(lang, "credits")}
                   </span>

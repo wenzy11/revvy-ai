@@ -23,7 +23,8 @@ export default function EditorPage() {
 
   const creditsBlocked = authLoading || creditsLoading;
   const photoCount = Math.max(1, Math.floor(draft.settings.photoCount ?? 1));
-  const canFinal = !processing && credits >= photoCount && !creditsBlocked;
+  const spendCredits = photoCount === 1 ? 2 : photoCount;
+  const canFinal = !processing && credits >= spendCredits && !creditsBlocked;
 
   if (!draft.sourceUrl) {
     return (
@@ -92,7 +93,7 @@ export default function EditorPage() {
                       ))}
                     </select>
                     <div className="mt-2 text-xs text-[color:var(--muted)]">
-                      {photoCount} {photoCount === 1 ? "kredi" : "kredi"}
+                      {spendCredits} kredi toplam
                     </div>
                   </div>
 
@@ -184,7 +185,7 @@ export default function EditorPage() {
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  Final Render Al ({photoCount} kredi)
+                  Final Render Al ({spendCredits} kredi)
                 </Button>
 
                 {draft.finals?.length ? (
@@ -213,7 +214,7 @@ export default function EditorPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-xs text-[color:var(--muted)]">
-                    {`Final icin en az ${photoCount} kredi gerekir.`}
+                    {`Final icin en az ${spendCredits} kredi gerekir.`}
                   </div>
                 )}
 

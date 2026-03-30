@@ -73,6 +73,11 @@ function clampPhotoCount(photoCount: number | undefined): number {
   return Math.min(n, 4);
 }
 
+function creditsToSpend(photoCount: number): number {
+  // 1 foto icin ekstra ucret: 1 foto = 2 kredi
+  return photoCount === 1 ? 2 : photoCount;
+}
+
 function poseVariation(i: number, photoCount: number): string {
   // PhotoCount=3 icin: deterministik ON / ARKA / YAN.
   if (photoCount === 3) {
@@ -181,6 +186,7 @@ export async function POST(req: Request) {
     let firebaseUid: string | null = null;
 
     const photoCount = clampPhotoCount(body.photoCount);
+    const spendCredits = creditsToSpend(photoCount);
     const plateOption: PlateOption =
       body.plateOption === "none" || body.plateOption === "blurred" || body.plateOption === "custom"
         ? body.plateOption
@@ -199,7 +205,7 @@ export async function POST(req: Request) {
       firebaseUid = decoded.uid;
       if (body.stage === "final") {
         const creditsNow = await getCredits(firebaseUid);
-        if (creditsNow < photoCount) {
+        if (creditsNow < spendCredits) {
           return Response.json({ error: "Yetersiz kredi" }, { status: 403 });
         }
       }
@@ -237,7 +243,7 @@ export async function POST(req: Request) {
 
     let creditsRemaining: number | undefined;
     if (body.stage === "final" && firebaseUid) {
-      const spent = await consumeCredits(firebaseUid, photoCount);
+      const spent = await consumeCredits(firebaseUid, spendCredits);
       if (!spent.ok) {
         return Response.json({ error: "Kredi guncellenemedi" }, { status: 409 });
       }
