@@ -57,14 +57,19 @@ export default function ProfilePage() {
   const canLoad = firebaseEnabled && Boolean(uid);
 
   useEffect(() => {
-    if (!canLoad || !uid) return;
+    if (!canLoad || !uid) {
+      return;
+    }
 
     const db = getFirebaseDb();
-    if (!db) return;
+    if (!db) {
+      return;
+    }
 
     let cancelled = false;
     void (async () => {
       if (cancelled) return;
+
       setLoading(true);
       setError(null);
 
@@ -123,7 +128,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [canLoad, uid]);
+  }, [canLoad, uid, firebaseEnabled]);
 
   const historyTitle = useMemo(() => t(lang, "profile_history"), [lang]);
   const profileTitle = useMemo(() => t(lang, "profile_title"), [lang]);
