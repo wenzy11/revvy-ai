@@ -1,4 +1,4 @@
-export type PlateOption = "blurred" | "none";
+export type PlateOption = "blurred" | "custom" | "none";
 
 export type EditSettings = {
   promptText: string;

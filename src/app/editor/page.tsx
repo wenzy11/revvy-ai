@@ -105,17 +105,22 @@ export default function EditorPage() {
                       onChange={(event) =>
                         updateSettings({
                           plateOption:
-                            event.target.value === "none" ? "none" : "blurred",
+                            event.target.value === "none"
+                              ? "none"
+                              : event.target.value === "custom"
+                                ? "custom"
+                                : "blurred",
                         })
                       }
                       className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
                     >
                       <option value="blurred">Bulanık plaka</option>
+                      <option value="custom">Yazdığımız plaka</option>
                       <option value="none">Plakasız</option>
                     </select>
                   </div>
 
-                  {draft.settings.plateOption === "blurred" ? (
+                  {draft.settings.plateOption === "custom" ? (
                     <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-3">
                       <div className="mb-2 text-sm font-semibold text-blue-950">
                         Plaka Metni
@@ -129,10 +134,15 @@ export default function EditorPage() {
                         placeholder="Örn: 34 ABC 1234"
                         className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
                       />
+                      <div className="mt-2 text-xs text-[color:var(--muted)]">
+                        Bu metin plaka olarak okunabilir şekilde yerleştirilmeye çalışılır.
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-[color:var(--border)] bg-white/70 p-3 text-xs text-[color:var(--muted)]">
-                      {`Plakasız seçildiğinde plaka tamamen kaldırılır.`}
+                      {draft.settings.plateOption === "none"
+                        ? "Plakasız seçildiğinde plaka tamamen kaldırılır."
+                        : "Bulanık plaka seçildiğinde plaka metni okunabilir olmayacak."}
                     </div>
                   )}
 

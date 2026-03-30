@@ -33,19 +33,33 @@ const BASE_QUALITY_PROMPT = [
   "Yuklenen aracin modelini, rengini ve tum detaylarini KORU (araci degistirme).",
   "Araci ilan kalitesine getir: duzgun pozlama, temiz kontrast, dogal renk, net detay.",
   "Arka plan profesyonel ve dikkat dagitmayacak kadar temiz olsun.",
-  "Goruntude yazi, logo, watermark, metin, etiket, tabelalar OLMASIN.",
+  // Plaka metni istenirse istisna olabilir.
+  "Goruntude watermark, logo, metin, etiket, tabela OLMASIN (plaka yazisi istenirse istisna).",
 ].join("\n");
 
 function platePrompt(plateOption: PlateOption, plateText: string): string {
+  const trimmed = plateText.trim();
+
   if (plateOption === "none") {
     return [
       "Insan, yuz, plaka bilgisi gibi hassas detaylari gizle.",
       "Plakayi tamamen kaldir; plaka yazilari/etiketleri OLMASIN.",
     ].join("\n");
   }
-  const trimmed = plateText.trim();
+
+  if (plateOption === "custom") {
+    return [
+      "Insan, yuz, plaka bilgisi gibi hassas detaylari gizle (plaka haric).",
+      trimmed
+        ? `Plakaya EXACT olarak su metni yerlestir: "${trimmed}". Plaka karakterleri net, keskin ve okunabilir olsun.`
+        : "Plakaya okunabilir bir metin yerlestir (kullanici plaka metni bossa varsayim yapma; plaka okunakli olsun).",
+      "Plaka disinda watermark/logo/metin/etiket/tabela OLMASIN.",
+    ].join("\n");
+  }
+
+  // blurred (default)
   const maybePlateLine = trimmed
-    ? `Kullanici plakasi: "${trimmed}". Plaka karakterleri (numara/harfler) okunabilir olmamali, blur/maskele ile gizlenmeli.`
+    ? `Kullanici plakasi: "${trimmed}". Bu bilgi okunabilir olmamali; plaka karakterleri blur/maskele ile gizlenmeli.`
     : `Plakayi blurla/maskele; plaka karakterleri okunabilir olmamali.`;
   return [
     "Insan, yuz, plaka bilgisi gibi hassas detaylari gizle (plakayi blurla/maskele).",
@@ -56,7 +70,48 @@ function platePrompt(plateOption: PlateOption, plateText: string): string {
 function clampPhotoCount(photoCount: number | undefined): number {
   const n = Math.floor(photoCount ?? 1);
   if (!Number.isFinite(n) || n < 1) return 1;
-  return Math.min(n, 6);
+  return Math.min(n, 4);
+}
+
+function poseVariation(i: number, photoCount: number): string {
+  // PhotoCount=3 icin: deterministik ON / ARKA / YAN.
+  if (photoCount === 3) {
+    if (i === 0) {
+      return [
+        "POZISYON 1/3: ON GORUNUM (aracin on kaputu/kasa önü kameraya dönük).",
+        "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+        "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
+      ].join("\n");
+    }
+    if (i === 1) {
+      return [
+        "POZISYON 2/3: ARKA GORUNUM (aracin arka bagaj bölümü kameraya dönük).",
+        "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+        "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
+      ].join("\n");
+    }
+    return [
+      "POZISYON 3/3: YAN GORUNUM (aracin yan cephesi 3/4 aci ile kameraya dönük).",
+      "Aracin ayni konumda kaldigi varsayilsin; sadece kamera/perspektif degissin.",
+      "Zemin ve arka plan mümkün oldugunca benzer/kesintisiz kalmali.",
+    ].join("\n");
+  }
+
+  // 2 foto: ON / ARKA.
+  if (photoCount === 2) {
+    return [
+      `POZISYON ${i + 1}/${photoCount}: Kamerayi öne/arkaya alacak sekilde perspektif degissin.`,
+      "Aracin ayni konumda kaldigi varsayilsin; sadece kadraj/perspektif degissin.",
+      "Aracin rengi, modeli ve temel detaylari korunmali.",
+    ].join("\n");
+  }
+
+  // 4+ foto: daha genis kamera varyasyonu.
+  const idx = i + 1;
+  return [
+    `POZISYON ${idx}/${photoCount}: Kamera acisi ve perspektif degissin (aracin ayni sahnede kaldigi varsayilsin).`,
+    "Zemin/arka plan benzer kalmali; aracin detaylari korunmali.",
+  ].join("\n");
 }
 
 function envImageQuality(): string {
@@ -126,7 +181,10 @@ export async function POST(req: Request) {
     let firebaseUid: string | null = null;
 
     const photoCount = clampPhotoCount(body.photoCount);
-    const plateOption: PlateOption = body.plateOption === "none" ? "none" : "blurred";
+    const plateOption: PlateOption =
+      body.plateOption === "none" || body.plateOption === "blurred" || body.plateOption === "custom"
+        ? body.plateOption
+        : "blurred";
     const plateText = typeof body.plateText === "string" ? body.plateText : "";
 
     if (adminConfigured) {
@@ -155,9 +213,7 @@ export async function POST(req: Request) {
     const urls: string[] = [];
     for (let i = 0; i < photoCount; i++) {
       const variation =
-        photoCount > 1
-          ? `\n\nVARYASYON ${i + 1}/${photoCount}: Kamera acisi ve kompozisyonu hafifce degistir (aynı araci koru), kadraj/mesafe degisiklikleri yap. Aracin modeli, rengi ve temel detaylari degismemeli.`
-          : "";
+        photoCount > 1 ? `\n\n${poseVariation(i, photoCount)}` : "";
       const prompt = `${promptBase}${variation}`.trim();
 
       const result = await openai.images.edit({

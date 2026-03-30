@@ -27,7 +27,17 @@ export default function UploadPage() {
     draft.sourceUrl && !processing && credits >= photoCount && !creditsBlocked;
 
   const plateLabel =
-    draft.settings.plateOption === "none" ? (lang === "tr" ? "Plakasız" : "No plate") : (lang === "tr" ? "Bulanık plaka" : "Blurred plate");
+    draft.settings.plateOption === "none"
+      ? lang === "tr"
+        ? "Plakasız"
+        : "No plate"
+      : draft.settings.plateOption === "custom"
+        ? lang === "tr"
+          ? "Yazdığımız plaka"
+          : "Custom plate"
+        : lang === "tr"
+          ? "Bulanık plaka"
+          : "Blurred plate";
 
   const costText =
     lang === "tr" ? `(${photoCount} kredi)` : `(${photoCount} credit${photoCount === 1 ? "" : "s"})`;
@@ -135,13 +145,21 @@ export default function UploadPage() {
                 value={draft.settings.plateOption}
                 onChange={(event) =>
                   updateSettings({
-                    plateOption: event.target.value === "none" ? "none" : "blurred",
+                    plateOption:
+                      event.target.value === "none"
+                        ? "none"
+                        : event.target.value === "custom"
+                          ? "custom"
+                          : "blurred",
                   })
                 }
                 className="w-full rounded-xl border border-[color:var(--border)] bg-white px-3 py-2 text-sm text-blue-950 outline-none focus:border-blue-400"
               >
                 <option value="blurred">
                   {lang === "tr" ? "Bulanık plaka" : "Blurred plate"}
+                </option>
+                <option value="custom">
+                  {lang === "tr" ? "Yazdığımız plaka" : "Custom plate"}
                 </option>
                 <option value="none">{lang === "tr" ? "Plakasız" : "No plate"}</option>
               </select>
@@ -152,7 +170,7 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {draft.settings.plateOption === "blurred" ? (
+            {draft.settings.plateOption === "custom" ? (
               <div className="rounded-2xl border border-[color:var(--border)] bg-white p-3">
                 <label className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-blue-950">
                   Plaka Metni
@@ -166,8 +184,18 @@ export default function UploadPage() {
                 />
                 <div className="mt-2 text-xs text-[color:var(--muted)]">
                   {lang === "tr"
-                    ? "Plaka metni bulanık olacak; yine de formu korumak için kullanılır."
-                    : "Even though it will be blurred, we use this to keep plate structure."}
+                    ? "Bu metin plaka olarak okunabilir şekilde yerleştirilmeye çalışılır."
+                    : "We try to place this text on the plate in a readable way."}
+                </div>
+              </div>
+            ) : null}
+
+            {draft.settings.plateOption === "blurred" ? (
+              <div className="rounded-2xl border border-[color:var(--border)] bg-white p-3">
+                <div className="text-xs text-[color:var(--muted)]">
+                  {lang === "tr"
+                    ? "Bulanık plaka seçildi: yazdığın metin okunabilir olmayacak (input burada gizli)."
+                    : "Blurred plate selected: plate text won’t be readable (input hidden)."}
                 </div>
               </div>
             ) : null}
