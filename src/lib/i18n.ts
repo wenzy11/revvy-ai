@@ -80,7 +80,7 @@ const tr: Dict = {
   profile_support_email: "wenzykerem@gmail.com",
   profile_support_hint: "Genel sorular ve destek için bize yaz.",
   profile_support_button: "E-posta gönder",
-  anon_banner_title: "Anonim giriş yaptın",
+  anon_banner_title: "Google hesabını bağlayın",
   anon_banner_body:
     "Güvenlik için e-postanı Google hesabına bağlamanı öneriyoruz.",
   anon_banner_cta: "Google hesabını bağla",
@@ -163,7 +163,7 @@ const en: Dict = {
   profile_support_email: "wenzykerem@gmail.com",
   profile_support_hint: "Email us for questions and support.",
   profile_support_button: "Send email",
-  anon_banner_title: "You are signed in anonymously",
+  anon_banner_title: "Connect your Google account",
   anon_banner_body: "For security, please connect your email to your Google account.",
   anon_banner_cta: "Connect Google account",
 };

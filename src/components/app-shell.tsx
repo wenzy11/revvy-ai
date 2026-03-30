@@ -96,18 +96,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {firebaseEnabled && user?.isAnonymous ? (
         <div className="mx-auto w-full max-w-6xl px-6 pb-0">
-          <div className="mb-6 rounded-2xl border border-[color:var(--border)] bg-blue-50/30 p-4">
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/30 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
-                <div className="text-sm font-semibold text-blue-950">
+                <div className="text-sm font-semibold text-red-900">
                   {t(lang, "anon_banner_title")}
                 </div>
-                <div className="text-xs text-[color:var(--muted)]">
+                <div className="text-xs text-red-900/70">
                   {t(lang, "anon_banner_body")}
                 </div>
               </div>
               <Button
-                className="h-10"
+                className="h-10 border-red-200 bg-red-50 text-red-900 hover:bg-red-100 hover:text-red-950"
                 variant="secondary"
                 disabled={signInPending}
                 onClick={() => {
