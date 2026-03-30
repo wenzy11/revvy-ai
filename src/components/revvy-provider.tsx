@@ -246,7 +246,15 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("getRedirectResult", err);
         if (!cancelled && isRedirectStorageError(err)) {
-          setSignInErrorKey("auth_storage_error");
+          // Private/incognito'da getRedirectResult bazı durumlarda non-redirect akışlarında da hata döndürebiliyor.
+          // Bu yüzden sadece URL'de redirect'e ait parametreler varsa error'ı gösteriyoruz.
+          const search =
+            typeof window !== "undefined" ? window.location.search : "";
+          const looksLikeRedirect =
+            /firebase|oauth|code=|state=|authuser=/.test(search);
+          if (looksLikeRedirect) {
+            setSignInErrorKey("auth_storage_error");
+          }
         }
       }
       if (cancelled) return;
