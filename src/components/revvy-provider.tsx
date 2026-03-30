@@ -3,7 +3,9 @@
 import {
   GoogleAuthProvider,
   getRedirectResult,
+  linkWithPopup,
   onAuthStateChanged,
+  signInAnonymously as firebaseSignInAnonymously,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -59,6 +61,8 @@ type RevvyContextValue = {
   draft: Draft;
   processing: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInAnonymously: () => Promise<void>;
+  linkAnonymousWithGoogle: () => Promise<void>;
   signInPending: boolean;
   /** Giriş hatası (ör. redirect depolama); i18n anahtarı */
   signInErrorKey: string | null;
@@ -265,6 +269,7 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
           uid: fbUser.uid,
           name: fbUser.displayName ?? undefined,
           photoURL: fbUser.photoURL ?? undefined,
+          isAnonymous: fbUser.isAnonymous,
         });
         setAuthLoading(false);
 
@@ -337,6 +342,42 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       if (isRedirectStorageError(e)) {
         setSignInErrorKey("auth_storage_error");
       }
+      setSignInPending(false);
+    }
+  }, []);
+
+  const signInAnonymously = useCallback(async () => {
+    const auth = getFirebaseAuth();
+    if (!auth) return;
+
+    setSignInErrorKey(null);
+    setSignInPending(true);
+    try {
+      await firebaseSignInAnonymously(auth);
+      setSignInPending(false);
+    } catch (e) {
+      console.error("signInAnonymously", e);
+      setSignInErrorKey("auth_storage_error");
+      setSignInPending(false);
+    }
+  }, []);
+
+  const linkAnonymousWithGoogle = useCallback(async () => {
+    const auth = getFirebaseAuth();
+    const fbUser = auth?.currentUser;
+    if (!auth || !fbUser || !fbUser.isAnonymous) return;
+
+    setSignInErrorKey(null);
+    setSignInPending(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope("profile");
+      provider.addScope("email");
+      await linkWithPopup(fbUser, provider);
+      setSignInPending(false);
+    } catch (e) {
+      console.error("linkAnonymousWithGoogle", e);
+      setSignInErrorKey("auth_storage_error");
       setSignInPending(false);
     }
   }, []);
@@ -476,6 +517,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       draft,
       processing,
       signInWithGoogle,
+      signInAnonymously,
+      linkAnonymousWithGoogle,
       signInPending,
       signInErrorKey,
       clearSignInError,
@@ -499,6 +542,8 @@ export function RevvyProvider({ children }: { children: ReactNode }) {
       draft,
       processing,
       signInWithGoogle,
+      signInAnonymously,
+      linkAnonymousWithGoogle,
       signInPending,
       signInErrorKey,
       clearSignInError,

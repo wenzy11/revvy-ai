@@ -15,6 +15,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     firebaseEnabled,
     firebaseConfigResolving,
     signInWithGoogle,
+    signInAnonymously,
     signInPending,
     signInErrorKey,
     clearSignInError,
@@ -86,6 +87,18 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             ) : (
               t(lang, "google_sign_in")
             )}
+          </Button>
+
+          <Button
+            className="h-12 w-full text-base"
+            variant="secondary"
+            disabled={signInPending}
+            onClick={() => {
+              clearSignInError();
+              void signInAnonymously();
+            }}
+          >
+            {t(lang, "auth_wall_anon_sign_in")}
           </Button>
           <p className="text-center text-[10px] text-[color:var(--muted)]">{t(lang, "auth_wall_redirect_note")}</p>
           <label className="flex items-center justify-center gap-2 text-xs text-blue-800">

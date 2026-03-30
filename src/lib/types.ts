@@ -36,4 +36,5 @@ export type AppUser = {
   uid?: string;
   name?: string;
   photoURL?: string;
+  isAnonymous?: boolean;
 };

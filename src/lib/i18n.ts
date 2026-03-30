@@ -11,6 +11,7 @@ const tr: Dict = {
   credits: "kredi",
   demo_login: "Demo Giriş",
   google_sign_in: "Google ile giriş",
+  auth_wall_anon_sign_in: "Kod istemeden devam et (Anonim)",
   config_loading: "Yükleniyor…",
   auth_wall_title: "Devam etmek için giriş yap",
   auth_wall_subtitle:
@@ -79,6 +80,10 @@ const tr: Dict = {
   profile_support_email: "wenzykerem@gmail.com",
   profile_support_hint: "Genel sorular ve destek için bize yaz.",
   profile_support_button: "E-posta gönder",
+  anon_banner_title: "Anonim giriş yaptın",
+  anon_banner_body:
+    "Güvenlik için e-postanı Google hesabına bağlamanı öneriyoruz.",
+  anon_banner_cta: "Google hesabını bağla",
 };
 
 const en: Dict = {
@@ -90,6 +95,7 @@ const en: Dict = {
   credits: "credits",
   demo_login: "Demo Login",
   google_sign_in: "Sign in with Google",
+  auth_wall_anon_sign_in: "Continue without codes (Anonymous)",
   config_loading: "Loading…",
   auth_wall_title: "Sign in to continue",
   auth_wall_subtitle:
@@ -157,6 +163,9 @@ const en: Dict = {
   profile_support_email: "wenzykerem@gmail.com",
   profile_support_hint: "Email us for questions and support.",
   profile_support_button: "Send email",
+  anon_banner_title: "You are signed in anonymously",
+  anon_banner_body: "For security, please connect your email to your Google account.",
+  anon_banner_cta: "Connect Google account",
 };
 
 const dictionaries: Record<Lang, Dict> = { tr, en };

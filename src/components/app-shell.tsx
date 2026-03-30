@@ -17,7 +17,16 @@ const links = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { lang, setLang, credits, signOut } = useRevvy();
+  const {
+    lang,
+    setLang,
+    credits,
+    signOut,
+    firebaseEnabled,
+    user,
+    linkAnonymousWithGoogle,
+    signInPending,
+  } = useRevvy();
 
   return (
     <div className="min-h-screen bg-white text-blue-950">
@@ -84,6 +93,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+
+      {firebaseEnabled && user?.isAnonymous ? (
+        <div className="mx-auto w-full max-w-6xl px-6 pb-0">
+          <div className="mb-6 rounded-2xl border border-[color:var(--border)] bg-blue-50/30 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-blue-950">
+                  {t(lang, "anon_banner_title")}
+                </div>
+                <div className="text-xs text-[color:var(--muted)]">
+                  {t(lang, "anon_banner_body")}
+                </div>
+              </div>
+              <Button
+                className="h-10"
+                variant="secondary"
+                disabled={signInPending}
+                onClick={() => {
+                  void linkAnonymousWithGoogle();
+                }}
+              >
+                {t(lang, "anon_banner_cta")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <main className="mx-auto w-full max-w-6xl px-6 py-8">{children}</main>
     </div>
