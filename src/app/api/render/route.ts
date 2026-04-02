@@ -30,12 +30,66 @@ function dataUrlToBuffer(dataUrl: string) {
 
 const BASE_QUALITY_PROMPT = [
   "Sen profesyonel otomotiv studyosu retus uzmani bir AI'sin.",
-  "Yuklenen aracin modelini, rengini ve tum detaylarini KORU (araci degistirme).",
+  "Kullanici istegini birinci oncelik olarak uygula.",
+  "Kullanici acikca istemedigi surece yuklenen aracin modelini, rengini ve temel detaylarini KORU.",
   "Araci ilan kalitesine getir: duzgun pozlama, temiz kontrast, dogal renk, net detay.",
   "Arka plan profesyonel ve dikkat dagitmayacak kadar temiz olsun.",
   // Plaka metni istenirse istisna olabilir.
   "Goruntude watermark, logo, metin, etiket, tabela OLMASIN (plaka yazisi istenirse istisna).",
 ].join("\n");
+
+function wantsCarModification(userPrompt: string): boolean {
+  const p = userPrompt.toLowerCase();
+  const needles = [
+    "modifiye",
+    "body kit",
+    "spoiler",
+    "jant",
+    "rim",
+    "widebody",
+    "wide body",
+    "stance",
+    "air suspension",
+    "coilover",
+    "lower",
+    "drop",
+    "camber",
+    "lip",
+    "difuzor",
+    "diffuser",
+    "egzoz",
+    "exhaust",
+    "kaput",
+    "hood",
+    "far",
+    "headlight",
+    "taillight",
+    "renk degistir",
+    "color change",
+    "vinyl",
+    "wrap",
+    "performance look",
+  ];
+  return needles.some((n) => p.includes(n));
+}
+
+function userPriorityPrompt(userPrompt: string): string {
+  const clean = userPrompt.trim();
+  const base = [
+    "KULLANICI ISTEGI EN UST ONCELIKTIR.",
+    "Asagidaki istegi oldugu gibi uygula. Belirsizlik olursa stüdyo-kalite ama dogal sonuc uret.",
+    `KULLANICI ISTEGI:\n${clean || "(bos)"}`,
+  ];
+
+  if (wantsCarModification(clean)) {
+    base.push(
+      "Kullanici modifiye/degisiklik istiyor: istenen parcalari ve stili uygula.",
+      "Modifiye yaparken perspektif, geometri ve fotogercekciligi koru; parcalari bozmadan dogal entegre et.",
+    );
+  }
+
+  return base.join("\n");
+}
 
 function platePrompt(plateOption: PlateOption, plateText: string): string {
   const trimmed = plateText.trim();
@@ -216,7 +270,11 @@ export async function POST(req: Request) {
     const { buffer, mimeType } = dataUrlToBuffer(body.imageDataUrl);
     const openai = new OpenAI({ apiKey });
 
-    const promptBase = `${BASE_QUALITY_PROMPT}\n${platePrompt(plateOption, plateText)}\n\nKULLANICI ISTEGI:\n${body.userPrompt || ""}`.trim();
+    const promptBase = [
+      userPriorityPrompt(body.userPrompt || ""),
+      BASE_QUALITY_PROMPT,
+      platePrompt(plateOption, plateText),
+    ].join("\n\n").trim();
 
     const urls: string[] = [];
     for (let i = 0; i < photoCount; i++) {
